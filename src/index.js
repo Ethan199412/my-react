@@ -8,31 +8,30 @@ class Counter extends React.Component {
   componentWillMount() {
     console.log("father will mount");
   }
-  componentDidMount() {
-    setInterval(() => {
-      this.setState({
-        number: this.state.number + 1,
-      });
-    }, 1000);
+  // componentDidMount() {
+  //   setInterval(() => {
+  //     this.setState({
+  //       number: this.state.number + 1,
+  //     });
+  //   }, 1000);
+  // }
+  shouldComponentUpdate(nextProps, nextState) {
+    return true
   }
-  shouldComponentUpdate(nextProps,nextState){
-      return true
-  }
-  componentDidUpdate(){
-      console.log('father did update')
+  componentDidUpdate() {
+    console.log('father did update')
   }
   onClick = () => {
-    console.log("haha");
+    this.setState({
+      number: this.state.number + 1
+    })
   };
   render() {
-    return (
-      <div>
-        <div>{this.state.number}</div>
-        <button onClick={this.onClick}>add</button>
-        <button>minus</button>
-        <SubComponent number={this.state.number} />
-      </div>
-    );
+    return <div>
+      <p>{this.state.number}</p>
+      <input />
+      <button onClick={this.onClick}>+</button>
+    </div>
   }
 }
 

@@ -20,6 +20,5 @@ function render(element, container) {
   let evt = document.createEvent("HTMLEvents");
   evt.initEvent("mounted");
   document.dispatchEvent(evt)
-
 }
 export default React;
