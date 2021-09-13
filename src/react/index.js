@@ -9,7 +9,7 @@ let React = {
   Component
 };
 function render(element, container) {
-  // element: React组件 container: div
+  // element: React组件 container: div 真实 dom
   //$(container).html(element)
   //let markUp = `<span data-reactid="${React.nextRootIndex}">${element}</span>`
   let createReactUnitInstance = createReactUnit(element);
