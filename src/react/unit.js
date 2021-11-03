@@ -71,16 +71,6 @@ class ReactNativeUnit extends Unit {
         contentStr = props["children"]
           .map((child, idx) => {
 
-            // if (Array.isArray(child)) {
-            //   return child.map(element => {
-            //     let childUnitInstance = createReactUnit(element);
-
-            //     // _mountIndex 属性，指向自己在父节点的位置。
-            //     childUnitInstance._mountIndex = idx
-            //     this._renderedChildrenUnits.push(childUnitInstance)
-            //     return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
-            //   }).join('')
-            // } else {
             //console.log('[p2.1] child', child)
             let childUnitInstance = createReactUnit(child);
 
@@ -88,7 +78,6 @@ class ReactNativeUnit extends Unit {
             childUnitInstance._mountIndex = idx
             this._renderedChildrenUnits.push(childUnitInstance)
             return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
-            // }
           })
           .join("");
       } else {
@@ -116,8 +105,8 @@ class ReactNativeUnit extends Unit {
       this.patch(diffQueue)
       diffQueue = []
     }
-
   }
+
   patch(diffQueue) {
     //console.log('[p0] diffQueue', diffQueue)
     //debugger
@@ -283,25 +272,14 @@ class ReactNativeUnit extends Unit {
 
     for (propName in newProps) {
       // 如果 Element 有儿子，先不处理
-
       if (propName == 'children') {
         continue
-        // let children = newProps[propName]
-        // let childString = ''
-        // children.forEach((child, index) => {
-        //   let childUnit = createReactUnit(child)
-        //   childUnit._mountIndex = index
-        //   this._renderedChildrenUnits.push(childUnit);
-        //   let childMarkUp = childUnit.getMarkUp(`${this._rootId}.${index}`)
-        //   childString += childMarkUp
-        // })
-        // console.log('[p3] childString', childString)
       }
       else if (/^on[A-Z]/.test(propName)) {
-
         let eventName = propName.slice(2).toLowerCase();
         $(document).delegate(`[data-reactid="${this._rootId}"]`, `${eventName}.${this._rootId}`, newProps[propName])
-      } else if (propName == 'className') {
+      }
+      else if (propName == 'className') {
         document.querySelector(`[data-reactid="${this._rootId}"]`).setAttribute('class', newProps[propName])
       }
       else if (propName == 'style') {
@@ -317,7 +295,7 @@ class ReactCompositUnit extends Unit {
   update(nextElement, partialState) {
     // _currentElement 是 Unit 自带的属性，代表一个组件的 jsx
     this._currentElement = nextElement || this._currentElement;
-
+    console.log('[p0] this._currentElement', this._currentElement)
     // 合并状态，同时更新了组件实例的 state
     let nextState = (this.componentInstance.state = Object.assign(
       this.componentInstance.state,
