@@ -1,15 +1,18 @@
 import $, { type } from "jquery";
 import { Element } from "./element.js";
-import types from './types'
+import types from './types.js'
 
 let diffQueue = []; //差异队列
 let updateDepth = 0; //更新的级别
 
 const COMMON_TYPE = new Set(["string", "number"]);
-class Unit {
+export class Unit {
   constructor(element) {
     this._currentElement = element;
     this._rootId = undefined;
+  }
+  getMarkUp(...args){
+    return ''
   }
 }
 

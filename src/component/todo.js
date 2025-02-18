@@ -1,4 +1,4 @@
-import React from '../react'
+import * as React from '../react/index.ts'
 
 export default class Todos extends React.Component {
     constructor(props) {
@@ -43,6 +43,10 @@ export default class Todos extends React.Component {
         const input = <input value={this.state.text} onChange={this.onChange} />
         const button = <button onClick={this.handleClick}>添加</button>
         const jsxList = this.renderList(this.state.list)
-        return React.createElement('div', {}, input, button, ...jsxList)
+        return <div>
+            {input}
+            {button}
+            {jsxList}
+        </div>
     }
 }
