@@ -66,18 +66,39 @@ class ReactNativeUnit extends Unit {
         // });
         $(document).delegate(`[data-reactid="${rootId}"]`, `${eventType}.${rootId}`, props[propName])
       } else if (propName === 'children') {
-        //console.log('[p2] children', props['children'])
+        console.log('[p2] children', props['children'])
+        if( Array.isArray(props.children[0]))
+        props.children = props.children[0]
+        console.log('[p2.4]', props.children)
         // ['<span>你好</span>','<button>123</button>']
         contentStr = props["children"]
           .map((child, idx) => {
+            // if(Array.isArray(child)){
+            //   child.forEach(e=>{
+            //     let childUnitInstance = createReactUnit(e);
+            //     childUnitInstance._mountIndex = idx
+            //     this._renderedChildrenUnits.push(childUnitInstance)
+            //   })
+            //   return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
+            // }
 
-            //console.log('[p2.1] child', child)
-            let childUnitInstance = createReactUnit(child);
+            console.log('[p2.1] child', child)
+            // 如果是数组
+            // if(Array.isArray(child)){
 
-            // _mountIndex 属性，指向自己在父节点的位置。
-            childUnitInstance._mountIndex = idx
-            this._renderedChildrenUnits.push(childUnitInstance)
-            return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
+            // }
+            // else{
+              let childUnitInstance = createReactUnit(child);
+
+              console.log('[p2.2] child', childUnitInstance)
+  
+              // _mountIndex 属性，指向自己在父节点的位置。
+              childUnitInstance._mountIndex = idx
+              this._renderedChildrenUnits.push(childUnitInstance)
+              console.log('[p2.3] child', childUnitInstance.getMarkUp(`${rootId}.${idx}`))
+  
+              return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
+            // }
           })
           .join("");
       } else {
