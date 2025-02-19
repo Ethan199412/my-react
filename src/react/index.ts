@@ -1,25 +1,23 @@
-import createReactUnit, { Unit } from "./unit.js";
-import createElement, { Element } from "./element.js";
-import Component from "./component.js";
+import createReactUnit, { Unit } from "./unit.ts";
+import createElement, { Element } from "./element.ts";
+import Component from "./component.ts";
 
 interface IReact {
   render: (element: any, container: HTMLElement) => void;
-  nextRootIndex: number;
-  createElement: (type: any, props: any, children: any[]) => Element;
+  nextRootIndex: string;
+  createElement: (type: string, props: Record<string, any>, children: Element[]) => Element;
   Component
 }
 
 let React: IReact = {
   render,
-  nextRootIndex: 0,
+  nextRootIndex: '0',
   createElement,
   Component,
 };
 
-function render(element, container: HTMLElement) {
+function render(element: Element, container: HTMLElement) {
   // element: React组件 container: div 真实 dom
-  //$(container).html(element)
-  //let markUp = `<span data-reactid="${React.nextRootIndex}">${element}</span>`
   let createReactUnitInstance: Unit = createReactUnit(element);
   let markUp: string = createReactUnitInstance.getMarkUp(React.nextRootIndex);
   container.innerHTML = markUp;

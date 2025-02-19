@@ -1,4 +1,4 @@
-import * as React from '../react/index.ts'
+import React from '../react/index.ts'
 
 export default class Todos extends React.Component {
     constructor(props) {
@@ -38,15 +38,13 @@ export default class Todos extends React.Component {
             </div>)
         })
     }
+    // remember, div in jsx means React.createElement('div', null, children)
     render() {
         console.log('[p0] render', this.state)
-        const input = <input value={this.state.text} onChange={this.onChange} />
-        const button = <button onClick={this.handleClick}>添加</button>
-        const jsxList = this.renderList(this.state.list)
         return <div>
-            {input}
-            {button}
-            {jsxList}
+            <input value={this.state.text} onChange={this.onChange} />
+            <button onClick={this.handleClick}>添加</button>
+            {this.renderList(this.state.list)}
         </div>
     }
 }

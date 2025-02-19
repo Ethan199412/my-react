@@ -1,4 +1,4 @@
-import React from '../react'
+import React from '../react/index.ts'
 
 export default class Test extends React.Component {
     constructor(props) {
@@ -11,7 +11,10 @@ export default class Test extends React.Component {
 
     render() {
         return <div>
-            {this.state.list.map(e=><div>{e}</div>)}
+            {this.state.list.map(e=><div>
+                <div>{e}</div>
+                <div>haha</div>
+            </div>)}
         </div>
     }
 }
