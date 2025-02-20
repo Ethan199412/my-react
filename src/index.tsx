@@ -1,5 +1,4 @@
 import React from "./react/index.ts";
-import Todo from "./component/todo.tsx"
-import Test from "./component/test"
+import Todos from "./component/todos.tsx"
 
-React.render(<Todo />, document.getElementById("root"));
+React.render(<Todos />, document.getElementById("root"));

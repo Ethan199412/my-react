@@ -1,4 +1,5 @@
 import React from '../react/index.ts'
+import Header from './header.tsx'
 
 export default class Todos extends React.Component {
     constructor(props) {
@@ -45,6 +46,7 @@ export default class Todos extends React.Component {
     // remember, div in jsx means React.createElement('div', null, children)
     render() {
         return <div>
+            <Header title='To do list'/>
             <input value={this.state.text} onChange={this.onChange} />
             <button onClick={this.handleAdd}>添加</button>
             {this.renderList(this.state.list)}
