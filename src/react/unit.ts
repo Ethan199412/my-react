@@ -328,7 +328,7 @@ class ReactNativeUnit extends Unit {
 export class ReactCompositUnit extends Unit {
   componentInstance: Component<any, any>;
   _renderUnit: Unit;
-  update(nextElement: Element, partialState) {
+  update(nextElement: Element, partialState: Record<string, any>) {
     // _currentElement 是 Unit 自带的属性，代表一个组件的 jsx
     this._currentElement = nextElement || this._currentElement;
     // 合并状态，同时更新了组件实例的 state
@@ -353,6 +353,7 @@ export class ReactCompositUnit extends Unit {
     let preRenderElement = preRenderUnitInstance._currentElement;
 
     // componentInstance 已经改了 state，所以 jsx 也是最新的。
+    // 注意 react 的 render 
     let nextRenderElement = this.componentInstance.render();
 
     if (shouldDeepCompare(preRenderElement, nextRenderElement)) {

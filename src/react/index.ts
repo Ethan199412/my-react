@@ -18,8 +18,10 @@ let React: IReact = {
 
 function render(element: Element, container: HTMLElement) {
   // element: React组件 container: div 真实 dom
+  // 第一步：element 转 unit，第二步：unit 转 html
   let createReactUnitInstance: Unit = createReactUnit(element);
   let markUp: string = createReactUnitInstance.getMarkUp(React.nextRootIndex);
+  console.log('[p1.0]',{markUp})
   container.innerHTML = markUp;
 
   //触发 componentDidMount
