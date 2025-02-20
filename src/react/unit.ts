@@ -1,39 +1,52 @@
 import $, { type } from "jquery";
 import { Element } from "./element.ts";
-import types from "./types.ts";
+import types, { NodeAction } from "./types.ts";
+import Component from "./component.ts";
 
-let diffQueue = []; //差异队列
+interface IDiff {
+  parentId: string; // 父 dom 的 id
+  parentNode: $<HTMLElement>; // 父 dom 的 JQ 节点
+  type: NodeAction; // 对比后判断是新增，删除，还是移动
+  fromIndex?: number; // 移动的元素的原来的位置
+  toIndex?: number; // 移动的元素的新位置
+  markup?: string; // 新增的元素的 html 字符串
+}
+
+let diffQueue: IDiff[] = []; //差异队列
 let updateDepth = 0; //更新的级别
 
 const COMMON_TYPE = new Set(["string", "number"]);
-export class Unit {
+export abstract class Unit {
   _rootId?: string; // 父元素的 id
-  _currentElement?: Element;
+  _currentElement?: Element | string | number;
   _mountIndex?: number;
 
-  constructor(element) {
+  constructor(element: Element | string | number) {
     this._currentElement = element;
     this._rootId = undefined;
   }
-  getMarkUp(id: string): string {
-    return '';
-  }
-  // update(element: Element, partialState?: any){
-  //   return ''
+  abstract getMarkUp(rootId?: string): string;
+  abstract update(
+    nextElement: Element | string | number,
+    partialState?: any
+  ): void;
+  // getMarkUp(id: string): string {
+  //   return '';
   // }
 }
 
+// 生成数字和字符串的 Unit
 class ReactTextUnit extends Unit {
   constructor(element) {
     super(element);
   }
-  getMarkUp(rootId) {
+  getMarkUp(rootId: string): string {
     this._rootId = rootId;
-    let markUp = `<span data-reactid="${rootId}">${this._currentElement}</span>`;
+    let markUp = `<span data-reactid="${rootId}">${this._currentElement as String | Number}</span>`;
     return markUp;
   }
   // 在本例中 nextElement 是一个改变后的状态，一个数字
-  update(nextElement) {
+  update(nextElement: string) {
     if (this._currentElement !== nextElement) {
       this._currentElement = nextElement;
       //$(`[data-reactid="${this._rootId}"]`).html(nextElement);
@@ -46,68 +59,67 @@ class ReactTextUnit extends Unit {
 }
 
 // id = 0.0.0, rootId = 0.0
-function isChild(id: string, rootId: string) {
-  if (rootId.length > id.length) return false;
-  for (let i = 0; i < rootId.length; i++) {
-    if (id[i] !== rootId[i]) {
-      return false;
-    }
-  }
-  return true;
-}
+// function isChild(childId: string, fatherId: string) {
+//   if (fatherId.length > childId.length) return false;
+//   for (let i = 0; i < fatherId.length; i++) {
+//     if (childId[i] !== fatherId[i]) {
+//       return false;
+//     }
+//   }
+//   return true;
+// }
 
+// 元素类型的标签，比如 div, span
+// 生成元素类型的 Unit
 class ReactNativeUnit extends Unit {
-  _renderedChildrenUnits: any[];
+  _renderedChildrenUnits: Unit[];
+
+  // 拼接真实 dom 的字符串
   getMarkUp(rootId: string): string {
     this._rootId = rootId;
-    let { type, props } = this._currentElement;
+    let { type, props } = this._currentElement as Element;
     let tagStart: string = `<${type} data-reactid="${rootId}"`;
     let tagEnd: string = `</${type}>`;
 
     this._renderedChildrenUnits = [];
     let contentStr;
     for (let propName in props) {
+      // 如果是事件
       if (/on[A-Z]/.test(propName)) {
         let eventType = propName.slice(2).toLowerCase(); // string click
-
+        
+        // 使用事件委托，降低内促占用
+        // 通过委托顶级dom，给满足特定条件的子元素绑定事件，其中 props[propname] 为事件处理函数
         $(document).delegate(
           `[data-reactid="${rootId}"]`,
           `${eventType}.${rootId}`,
           props[propName]
         );
-      } else if (propName === "children") {
-
-        console.log("[p2.4]", props.children);
+      } 
+      // 如果是子元素
+      else if (propName === "children") {
         // ['<span>你好</span>','<button>123</button>']
-        contentStr = props["children"]
+        contentStr = (props["children"] as Element[])
           .map((child, idx) => {
-            console.log("[p2.5] child", child, { rootId });
-
             let childUnitInstance: Unit = createReactUnit(child);
-
-            console.log("[p2.2] child", childUnitInstance);
 
             // _mountIndex 属性，指向自己在父节点的位置。
             childUnitInstance._mountIndex = idx;
             this._renderedChildrenUnits.push(childUnitInstance);
-            console.log(
-              "[p2.3] child",
-              childUnitInstance.getMarkUp(`${rootId}.${idx}`)
-            );
 
             return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
-            // }
           })
           .join("");
-      } else {
+      }
+      // 如果是其他属性 
+      else {
         tagStart += `${propName}=${props[propName]}`;
       }
     }
     return tagStart + ">" + contentStr + tagEnd;
   }
-  update(nextElement) {
-    //console.log('[p1] nextElement', nextElement)
-    let oldProps = this._currentElement.props;
+  update(nextElement: Element) {
+    let oldProps = (this._currentElement as Element).props;
     let newProps = nextElement.props;
     this.updateDOMProperties(oldProps, newProps);
     this.updateDOMChildren(nextElement.props.children);
@@ -118,7 +130,6 @@ class ReactNativeUnit extends Unit {
     updateDepth++;
     this.diff(diffQueue, newChildrenElements);
     updateDepth--;
-    //console.log('[p5] queue', diffQueue, updateDepth)
     if (updateDepth === 0) {
       console.log("[IMPORTANT] diffQueue", diffQueue);
       this.patch(diffQueue);
@@ -126,29 +137,24 @@ class ReactNativeUnit extends Unit {
     }
   }
 
-  patch(diffQueue) {
-    //console.log('[p0] diffQueue', diffQueue)
+  patch(diffQueue: IDiff[]) {
     //debugger
-    //console.log('[p2] diffQueue', diffQueue)
     let deleteChildren = [];
     let deleteMap = {};
     for (let i = 0; i < diffQueue.length; i++) {
       let difference = diffQueue[i];
       if (difference.type === types.MOVE || difference.type === types.REMOVE) {
-        let fromIndex = difference.fromIndex;
+        const { fromIndex } = difference;
         let oldChild = $(difference.parentNode.children().get(fromIndex));
-        //console.log('[p7] oldChild', difference, oldChild,difference.parentNode.children())
         deleteMap[fromIndex] = oldChild;
         deleteChildren.push(oldChild);
       }
     }
-    //console.log('[p7.1] deleteChildren', deleteChildren)
     $.each(deleteChildren, (idx, item) => $(item).remove());
 
     for (let i = 0; i < diffQueue.length; i++) {
       let difference = diffQueue[i];
       if (difference.type === types.MOVE || difference.type === types.INSERT) {
-        //console.log('[p9] type', difference.type)
         switch (difference.type) {
           case types.INSERT:
             this.insertChildAt(
@@ -167,19 +173,15 @@ class ReactNativeUnit extends Unit {
         }
       }
     }
-    //console.log('[p3] idx', item,idx)
   }
   insertChildAt(parentNode, index, newNode) {
-    //console.log('[p9] parentNode', parentNode, index, newNode)
     let oldChild = parentNode.children().get(index);
     oldChild ? newNode.insertBefore(oldChild) : newNode.appendTo(parentNode);
   }
   diff(diffQueue, newChildrenElements) {
-    //console.log('[p4] diff', diffQueue, newChildrenElements, '_renderedChildrenUnits', this._renderedChildrenUnits)
     let oldChildrenUnitMap = this.getOldChildrenMap(
       this._renderedChildrenUnits
     );
-    //console.log('[p4.1] oldChildrenUnitMap', oldChildrenUnitMap)
     // 先找老的集合里有没有能用的，能用就复用
     let { newChildrenUnitMap, newChildrenUnits } = this.getNewChildren(
       oldChildrenUnitMap,
@@ -188,13 +190,11 @@ class ReactNativeUnit extends Unit {
     let lastIndex = 0;
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
-      console.log('[p3.0]',{newUnit,newChildrenUnits,newChildrenUnitMap})
       // 第一个拿到的就是 newKey = A
       let newKey =
         (newUnit._currentElement.props && newUnit._currentElement.props.key) ||
         i.toString();
       let oldChildUnit = oldChildrenUnitMap[newKey];
-      //console.log('[p6] new old unit', newUnit, oldChildUnit)
       if (oldChildUnit === newUnit) {
         if (oldChildUnit._mountIndex < lastIndex) {
           diffQueue.push({
@@ -204,7 +204,6 @@ class ReactNativeUnit extends Unit {
             fromIndex: oldChildUnit._mountIndex,
             toIndex: i,
           });
-          //console.log('[p8] parenntNode', document.querySelector(`[data-reactid="${this._rootId}"]`))
         }
         lastIndex = Math.max(lastIndex, oldChildUnit._mountIndex);
       } else {
@@ -271,13 +270,11 @@ class ReactNativeUnit extends Unit {
       newChildrenUnits,
     };
   }
-  getOldChildrenMap(childrenUnits = []) {
-    console.log('[p4.0] childrenUnits', childrenUnits)
+  getOldChildrenMap(childrenUnits: Unit[] = []) {
     let map = {};
     for (let i = 0; i < childrenUnits.length; i++) {
       let unit = childrenUnits[i];
-      let element = unit._currentElement;
-      //console.log('[pA] unit', unit)
+      let element: Element = unit._currentElement as Element;
       let key = (element.props && element.props.key) || i.toString();
       map[key] = unit;
     }
@@ -327,20 +324,22 @@ class ReactNativeUnit extends Unit {
   }
 }
 
+// 生成组件类型的 Unit
 export class ReactCompositUnit extends Unit {
-  componentInstance: any;
-  _renderUnit: any;
-  update(nextElement, partialState) {
+  componentInstance: Component<any, any>;
+  _renderUnit: Unit;
+  update(nextElement: Element, partialState) {
     // _currentElement 是 Unit 自带的属性，代表一个组件的 jsx
     this._currentElement = nextElement || this._currentElement;
-    console.log("[p0] this._currentElement", this._currentElement);
     // 合并状态，同时更新了组件实例的 state
     let nextState = (this.componentInstance.state = Object.assign(
       this.componentInstance.state,
       partialState
     ));
     // 新的属性对象
-    let nextProps = this._currentElement.props;
+    let nextProps = (this._currentElement as Element).props;
+
+    // 执行 shouldComponentUpdate 生命周期
     if (
       this.componentInstance.shouldComponentUpdate &&
       !this.componentInstance.shouldComponentUpdate(nextProps, nextState)
@@ -372,8 +371,9 @@ export class ReactCompositUnit extends Unit {
     this._rootId = rootId;
     let { type: Component, props } = this._currentElement as Element;
 
-    console.log('[p4.3]',{Component})
-    let componentInstance = (this.componentInstance = new Component(props));
+    let componentInstance = (this.componentInstance = new (Component as any)(
+      props
+    ));
     componentInstance._currentUnit = this;
     //生命周期
     componentInstance.componentWillMount &&
@@ -395,12 +395,15 @@ export class ReactCompositUnit extends Unit {
     return markup;
   }
 }
+
+// element 转 Unit
+// 这里的 type 指的是 div span 等标签
 export default function createReactUnit(element: Element): Unit {
   // 数字和字符串，比如 10
   if (COMMON_TYPE.has(typeof element)) {
     return new ReactTextUnit(element);
   }
-  // react 元素，比如 <div>10</div>
+  // react 元素，比如 <div>10</div> 或者 <div><div>1</div></div>
   if (typeof element === "object" && typeof element.type === "string") {
     return new ReactNativeUnit(element);
   }
@@ -412,7 +415,10 @@ export default function createReactUnit(element: Element): Unit {
 }
 
 // 判断两个元素的类型一样不一样 oldElement: jsx, newElement: jsx
-function shouldDeepCompare(oldElement: Element | string | number, newElement: Element | string | number) {
+function shouldDeepCompare(
+  oldElement: Element | string | number,
+  newElement: Element | string | number
+) {
   if (oldElement != null && newElement != null) {
     const oldType = typeof oldElement;
     const newType = typeof newElement;

@@ -4,7 +4,7 @@ export default class Todos extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            list: ['haha', 'ha'],
+            list: ['to learn js', 'to learn react'],
             text: ''
         }
     }
@@ -16,8 +16,12 @@ export default class Todos extends React.Component {
         })
     }
 
-    handleClick = () => {
+    handleAdd = () => {
         let text = this.state.text;
+        if(!text){
+            alert('please input something')
+            return
+        }
         this.setState({
             list: [...this.state.list, text],
             text: ''
@@ -40,10 +44,9 @@ export default class Todos extends React.Component {
     }
     // remember, div in jsx means React.createElement('div', null, children)
     render() {
-        console.log('[p0] render', this.state)
         return <div>
             <input value={this.state.text} onChange={this.onChange} />
-            <button onClick={this.handleClick}>添加</button>
+            <button onClick={this.handleAdd}>添加</button>
             {this.renderList(this.state.list)}
         </div>
     }
