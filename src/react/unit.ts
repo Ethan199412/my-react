@@ -333,7 +333,7 @@ export class ReactCompositUnit extends Unit {
     this._currentElement = nextElement || this._currentElement;
     // 合并状态，同时更新了组件实例的 state
     let nextState = (this.componentInstance.state = Object.assign(
-      this.componentInstance.state,
+      this.componentInstance.state || {},
       partialState
     ));
     // 新的属性对象
