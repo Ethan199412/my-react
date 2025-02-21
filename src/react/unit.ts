@@ -42,7 +42,9 @@ class ReactTextUnit extends Unit {
   }
   getMarkUp(rootId: string): string {
     this._rootId = rootId;
-    let markUp = `<span data-reactid="${rootId}">${this._currentElement as String | Number}</span>`;
+    let markUp = `<span data-reactid="${rootId}">${
+      this._currentElement as String | Number
+    }</span>`;
     return markUp;
   }
   // 在本例中 nextElement 是一个改变后的状态，一个数字
@@ -87,7 +89,7 @@ class ReactNativeUnit extends Unit {
       // 如果是事件
       if (/on[A-Z]/.test(propName)) {
         let eventType = propName.slice(2).toLowerCase(); // string click
-        
+
         // 使用事件委托，降低内促占用
         // 通过委托顶级dom，给满足特定条件的子元素绑定事件，其中 props[propname] 为事件处理函数
         $(document).delegate(
@@ -95,7 +97,7 @@ class ReactNativeUnit extends Unit {
           `${eventType}.${rootId}`,
           props[propName]
         );
-      } 
+      }
       // 如果是子元素
       else if (propName === "children") {
         // ['<span>你好</span>','<button>123</button>']
@@ -111,13 +113,14 @@ class ReactNativeUnit extends Unit {
           })
           .join("");
       }
-      // 如果是其他属性 
+      // 如果是其他属性
       else {
         tagStart += `${propName}=${props[propName]}`;
       }
     }
     return tagStart + ">" + contentStr + tagEnd;
   }
+  // setState 会触发 update 方法
   update(nextElement: Element) {
     let oldProps = (this._currentElement as Element).props;
     let newProps = nextElement.props;
@@ -125,7 +128,7 @@ class ReactNativeUnit extends Unit {
     this.updateDOMChildren(nextElement.props.children);
   }
   // 此处要把新的儿子传过来，并和老的儿子进行对比，找出差异，并修改真实 dom
-  updateDOMChildren(newChildrenElements) {
+  updateDOMChildren(newChildrenElements: Element[]) {
     //console.log('[IMPORTANT] diffQueue', diffQueue)
     updateDepth++;
     this.diff(diffQueue, newChildrenElements);
@@ -139,13 +142,19 @@ class ReactNativeUnit extends Unit {
 
   patch(diffQueue: IDiff[]) {
     //debugger
-    let deleteChildren = [];
-    let deleteMap = {};
+    let deleteChildren: $<HTMLElement>[] = [];
+    let deleteMap: Record<number, $<HTMLElement>> = {};
+
     for (let i = 0; i < diffQueue.length; i++) {
-      let difference = diffQueue[i];
-      if (difference.type === types.MOVE || difference.type === types.REMOVE) {
+      let difference: IDiff = diffQueue[i];
+      if (
+        difference.type === NodeAction.Move ||
+        difference.type === NodeAction.Remove
+      ) {
         const { fromIndex } = difference;
-        let oldChild = $(difference.parentNode.children().get(fromIndex));
+        let oldChild: $<HTMLElement> = $(
+          difference.parentNode.children().get(fromIndex)
+        );
         deleteMap[fromIndex] = oldChild;
         deleteChildren.push(oldChild);
       }
@@ -282,15 +291,23 @@ class ReactNativeUnit extends Unit {
   }
 
   /**
-   * 此函数去查看
+   * 给真实 dom 更新属性
    */
-  updateDOMProperties(oldProps, newProps) {
-    let propName;
+  updateDOMProperties(
+    oldProps: Record<string, any>,
+    newProps: Record<string, any>
+  ) {
+    let propName: string;
     for (propName in oldProps) {
       if (!newProps.hasOwnProperty(propName)) {
+        // 更新真实 dom，删除属性
         document
           .querySelector(`[data-reactid="${this._rootId}"]`)
           .removeAttribute(propName);
+
+        // if (/^on[A-Z]/.test(propName)) {
+        //   $(document).undelegate(`.${this._rootId}`);
+        // }
       }
       if (/^on[A-Z]/.test(propName)) {
         $(document).undelegate(`.${this._rootId}`);
@@ -301,7 +318,9 @@ class ReactNativeUnit extends Unit {
       // 如果 Element 有儿子，先不处理
       if (propName == "children") {
         continue;
-      } else if (/^on[A-Z]/.test(propName)) {
+      }
+      // 如果是事件处理函数
+      else if (/^on[A-Z]/.test(propName)) {
         let eventName = propName.slice(2).toLowerCase();
         $(document).delegate(
           `[data-reactid="${this._rootId}"]`,
@@ -315,6 +334,7 @@ class ReactNativeUnit extends Unit {
       } else if (propName == "style") {
         //$(`[data-reactid="${}"]`)
       } else {
+        // 给真实 dom 添加属性
         $(`[data-reactid="${this._rootId}"]`).prop(
           propName,
           newProps[propName]
@@ -370,21 +390,24 @@ export class ReactCompositUnit extends Unit {
       $(`[data-reactid]="${this._rootId}"`).replaceWith(nextMarkUp);
     }
   }
+  // 生成组件类型的真实 dom
   getMarkUp(rootId) {
     this._rootId = rootId;
     let { type: Component, props } = this._currentElement as Element;
 
-    let componentInstance = (this.componentInstance = new (Component as any)(
-      props
-    ));
+    let componentInstance: Component<any, any> = (this.componentInstance =
+      new (Component as any)(props));
     componentInstance._currentUnit = this;
     //生命周期
     componentInstance.componentWillMount &&
       componentInstance.componentWillMount();
 
     // 拿到的是 jsx，Element
-    let reactComponentRender = componentInstance.render();
-    let renderUnit = (this._renderUnit = createReactUnit(reactComponentRender));
+    let reactComponentRender: Element = componentInstance.render();
+    let renderUnit: Unit = (this._renderUnit =
+      createReactUnit(reactComponentRender));
+
+    console.log("[p1.4]", { renderUnit, rootId });
 
     // unit 转换后的 html 字符串
     let markup = renderUnit.getMarkUp(rootId);
@@ -395,7 +418,7 @@ export class ReactCompositUnit extends Unit {
         componentInstance.componentDidMount();
     });
 
-    console.log('[p1.2]',{markup})
+    console.log("[p1.2]", { markup });
     return markup;
   }
 }
@@ -403,6 +426,7 @@ export class ReactCompositUnit extends Unit {
 // element 转 Unit
 // 这里的 type 指的是 div span 等标签
 export default function createReactUnit(element: Element): Unit {
+  console.log("[p1.3]", { element, type: element.type });
   // 数字和字符串，比如 10
   if (COMMON_TYPE.has(typeof element)) {
     return new ReactTextUnit(element);

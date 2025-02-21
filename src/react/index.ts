@@ -1,4 +1,4 @@
-import createReactUnit, { Unit } from "./unit.ts";
+import createReactUnit, { ReactCompositUnit, Unit } from "./unit.ts";
 import createElement, { Element } from "./element.ts";
 import Component from "./component.ts";
 
