@@ -1,4 +1,4 @@
-import $, { type } from "jquery";
+import $ from "jquery";
 import { Element } from "./element.ts";
 import types, { NodeAction } from "./types.ts";
 import Component from "./component.ts";
@@ -328,16 +328,19 @@ class ReactNativeUnit extends Unit {
 export class ReactCompositUnit extends Unit {
   componentInstance: Component<any, any>;
   _renderUnit: Unit;
-  update(nextElement: Element, partialState) {
+  update(nextElement: Element, partialState: Record<string, any>) {
     // _currentElement 是 Unit 自带的属性，代表一个组件的 jsx
     this._currentElement = nextElement || this._currentElement;
     // 合并状态，同时更新了组件实例的 state
     let nextState = (this.componentInstance.state = Object.assign(
-      this.componentInstance.state,
+      this.componentInstance.state || {},
       partialState
     ));
     // 新的属性对象
-    let nextProps = (this._currentElement as Element).props;
+    const nextProps = (this._currentElement as Element).props;
+
+    const prevProps = this.componentInstance.props;
+    const prevState = this.componentInstance.state;
 
     // 执行 shouldComponentUpdate 生命周期
     if (
@@ -359,7 +362,7 @@ export class ReactCompositUnit extends Unit {
       // 如果可以进行深比较，则把更新的工作交给更新前的 unit
       preRenderUnitInstance.update(nextRenderElement);
       this.componentInstance.componentDidUpdate &&
-        this.componentInstance.componentDidUpdate();
+        this.componentInstance.componentDidUpdate(prevProps, prevState);
     } else {
       // 直接创建了一个新的 unit
       this._renderUnit = createReactUnit(nextRenderElement);
@@ -392,6 +395,7 @@ export class ReactCompositUnit extends Unit {
         componentInstance.componentDidMount();
     });
 
+    console.log('[p1.2]',{markup})
     return markup;
   }
 }

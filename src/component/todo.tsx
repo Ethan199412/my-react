@@ -1,4 +1,5 @@
 import React from '../react/index.ts'
+import Header from './header.tsx'
 
 export default class Todos extends React.Component {
     constructor(props) {
@@ -7,6 +8,10 @@ export default class Todos extends React.Component {
             list: ['to learn js', 'to learn react'],
             text: ''
         }
+    }
+
+    componentDidMount() {
+        console.log('[p1.2] componentDidMount')
     }
 
     onChange = (e) => {
@@ -44,7 +49,9 @@ export default class Todos extends React.Component {
     }
     // remember, div in jsx means React.createElement('div', null, children)
     render() {
+        console.log('[p1.1] render')
         return <div>
+            <Header title='To do list'/>
             <input value={this.state.text} onChange={this.onChange} />
             <button onClick={this.handleAdd}>添加</button>
             {this.renderList(this.state.list)}
