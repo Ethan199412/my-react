@@ -400,6 +400,7 @@ export class ReactCompositUnit extends Unit {
 // element 转 Unit
 // 这里的 type 指的是 div span 等标签
 export default function createReactUnit(element: Element): Unit {
+  console.log('[p1.1]',{element, type:element.type})
   // 数字和字符串，比如 10
   if (COMMON_TYPE.has(typeof element)) {
     return new ReactTextUnit(element);

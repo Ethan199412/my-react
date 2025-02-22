@@ -21,7 +21,7 @@ function render(element: Element, container: HTMLElement) {
   // 第一步：element 转 unit，第二步：unit 转 html
   let createReactUnitInstance: Unit = createReactUnit(element);
   let markUp: string = createReactUnitInstance.getMarkUp(React.nextRootIndex);
-  console.log('[p1.0]',{markUp})
+  console.log('[p1.0]',{markUp, createReactUnitInstance})
   container.innerHTML = markUp;
 
   //触发 componentDidMount
