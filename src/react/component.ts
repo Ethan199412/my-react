@@ -5,7 +5,7 @@ export default class Component<IProps, IState extends Record<string, any>> {
   props?: IProps;
   state?: IState;
   _currentUnit?: ReactCompositUnit;
-  shouldComponentUpdate?: (nextProps: IProps, nextState: IState) => boolean;
+  shouldComponentUpdate?: (nextProps?: IProps, nextState?: IState) => boolean;
   componentDidUpdate?: (prevProps?: IProps, prevState?: IState) => void;
   componentDidMount?: () => void;
   componentWillUnmount?: () => void;

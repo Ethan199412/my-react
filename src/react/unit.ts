@@ -127,20 +127,35 @@ class ReactNativeUnit extends Unit {
     this.updateDOMProperties(oldProps, newProps);
     this.updateDOMChildren(nextElement.props.children);
   }
+
+  // 先 diff 再 patch
   // 此处要把新的儿子传过来，并和老的儿子进行对比，找出差异，并修改真实 dom
   updateDOMChildren(newChildrenElements: Element[]) {
     //console.log('[IMPORTANT] diffQueue', diffQueue)
+
+    // 这里的 updateDepth 指的是更新的级别，如果是 0，说明是第一次更新
     updateDepth++;
-    console.log('[p1.0]',{diffQueue: JSON.parse(JSON.stringify(diffQueue)), updateDepth, newChildrenElements})
+    // console.log("[p1.0]", {
+    //   diffQueue: JSON.parse(JSON.stringify(diffQueue)),
+    //   updateDepth,
+    //   newChildrenElements,
+    // });
     this.diff(diffQueue, newChildrenElements);
     updateDepth--;
+
+    // 只有 updateDepth 是 0 的时候，才会更新真实 dom
     if (updateDepth === 0) {
+      // diffQueue 只有真实 dom 的信息
       console.log("[IMPORTANT] diffQueue", diffQueue);
       this.patch(diffQueue);
+
+      // 这个 diffQueue 其实就相当于 react16 的 effectList
       diffQueue = [];
     }
   }
 
+  // 通过 diffQueue 更新真实 dom
+  // 就通俗的记忆 patch 方法是为了更新真实 dom 的
   patch(diffQueue: IDiff[]) {
     //debugger
     let deleteChildren: $<HTMLElement>[] = [];
@@ -156,16 +171,20 @@ class ReactNativeUnit extends Unit {
         let oldChild: $<HTMLElement> = $(
           difference.parentNode.children().get(fromIndex)
         );
+        console.log('[p2.0]',{oldChild, value: oldChild.html()})
         deleteMap[fromIndex] = oldChild;
         deleteChildren.push(oldChild);
       }
     }
+    console.log('[p2.1]',{deleteChildren:deleteChildren.map(e=>e.html())})
+    // 更新真实 dom
     $.each(deleteChildren, (idx, item) => $(item).remove());
 
     for (let i = 0; i < diffQueue.length; i++) {
       let difference = diffQueue[i];
-      if (difference.type === types.MOVE || difference.type === types.INSERT) {
-        switch (difference.type) {
+      const {type} = difference
+      if ([NodeAction.Insert, NodeAction.Move].includes(type)) {
+        switch (type) {
           case NodeAction.Insert:
             this.insertChildAt(
               difference.parentNode,
@@ -184,36 +203,54 @@ class ReactNativeUnit extends Unit {
       }
     }
   }
-  insertChildAt(parentNode: $<HTMLElement>, index: number, newNode: $<HTMLElement>) {
+  insertChildAt(
+    parentNode: $<HTMLElement>,
+    index: number,
+    newNode: $<HTMLElement>
+  ) {
     let oldChild = parentNode.children().get(index);
     oldChild ? newNode.insertBefore(oldChild) : newNode.appendTo(parentNode);
   }
   // 看起来 unit 好比一个缓存，缓存了上一次的 jsx
+  // diff 的目的是为了生成 diffQueue
   diff(diffQueue: IDiff[], newChildrenElements: Element[]) {
-    let oldChildrenUnitMap: Record<string, Unit> = this.getOldChildrenMap(
+    // key 和 Unit 的映射关系
+    const oldChildrenUnitMap: Record<string, Unit> = this.getOldChildrenMap(
       this._renderedChildrenUnits
     );
     // 先找老的集合里有没有能用的，能用就复用
-    let { newChildrenUnitMap, newChildrenUnits } = this.getNewChildren(
+    const { newChildrenUnitMap, newChildrenUnits } = this.getNewChildren(
       oldChildrenUnitMap,
       newChildrenElements
     );
-    console.log('[p1.1]',{oldChildrenUnitMap: JSON.parse(JSON.stringify(oldChildrenUnitMap))})
+    console.log("[p1.1]", {
+      oldChildrenUnitMap,
+      newChildrenUnitMap
+    });
+
+    // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
       newUnit._currentElement = newUnit._currentElement as Element;
       // 第一个拿到的就是 newKey = A
 
-      let newKey =
-        (newUnit._currentElement.props?.key) ||
-        i.toString();
+      let newKey = newUnit._currentElement.props?.key || i.toString();
       let oldChildUnit = oldChildrenUnitMap[newKey];
+
+      // console.log("[p1.2]", {
+      //   oldChildUnit: JSON.parse(JSON.stringify(oldChildUnit)),
+      //   newUnit: JSON.parse(JSON.stringify(newUnit)),
+      //   lastIndex,
+      // });
+      // 如果类型一致
       if (oldChildUnit === newUnit) {
         // _mountIndex 的意思是在父节点中的位置
+        console.log('[p1.2]',{oldChildUnit, lastIndex, mountIndex: oldChildUnit._mountIndex})
         if (oldChildUnit._mountIndex < lastIndex) {
+          // console.log("[p1.22]");
           diffQueue.push({
-            parentId: this._rootId,
+            parentId: this._rootId, // 节点自己的 reactid
             parentNode: $(`[data-reactid="${this._rootId}"]`),
             type: NodeAction.Move,
             fromIndex: oldChildUnit._mountIndex,
@@ -223,7 +260,10 @@ class ReactNativeUnit extends Unit {
         lastIndex = Math.max(lastIndex, oldChildUnit._mountIndex);
       } else {
         // 处理类型不一样时的逻辑
+        // 先删再加
+        // 如果是新增，则老的 oldChildUnit 是不存在的
         if (oldChildUnit) {
+          // console.log("[p1.23]");
           diffQueue.push({
             parentId: this._rootId,
             parentNode: $(`[data-reactid="${this._rootId}"]`),
@@ -233,6 +273,7 @@ class ReactNativeUnit extends Unit {
           this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
             (item) => item != oldChildUnit
           );
+          // 取消 .${oldChildUnit._rootId} 的所有事件委托
           $(document).undelegate(`.${oldChildUnit._rootId}`);
         }
         diffQueue.push({
@@ -245,9 +286,15 @@ class ReactNativeUnit extends Unit {
       }
       newUnit._mountIndex = i;
     }
+
+    // 在这里的时候，例子是 element 为 [1,2,3] 和 [1,2]，oldMap 是 1,3,3，newMap 是 1,3
+    // console.log("[p1.3]", { oldChildrenUnitMap, newChildrenUnitMap });
     for (let oldKey in oldChildrenUnitMap) {
       let oldChild = oldChildrenUnitMap[oldKey];
+
+      // 如果老的有，新的没有，那么删除
       if (!newChildrenUnitMap.hasOwnProperty(oldKey)) {
+        console.log("[p1.24]",{oldKey, oldChild, mountIndex: oldChild._mountIndex});
         diffQueue.push({
           parentId: this._rootId,
           parentNode: $(`[data-reactid="${this._rootId}"]`),
@@ -257,17 +304,21 @@ class ReactNativeUnit extends Unit {
         this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
           (item) => item != oldChild
         );
+        // 解除事件委托
         $(document).undelegate(`.${oldChild._rootId}`);
       }
     }
+    // console.log("[p1.21]", { diffQueue: [...diffQueue] });
   }
-  getNewChildren(oldChildrenUnitMap: Record<string, Unit>, newChildrenElements: Element[]) {
+  getNewChildren(
+    oldChildrenUnitMap: Record<string, Unit>,
+    newChildrenElements: Element[]
+  ) {
     let newChildrenUnits: Unit[] = [];
     let newChildrenUnitMap: Record<string, Unit> = {};
     newChildrenElements.forEach((newElement, index) => {
       // 如果没有 key，则使用 index
-      let newKey =
-        (newElement.props?.key) || index.toString();
+      let newKey = newElement.props?.key || index.toString();
       let oldUnit = oldChildrenUnitMap[newKey];
       let oldElement = oldUnit?._currentElement;
       if (shouldDeepCompare(oldElement, newElement)) {
@@ -295,9 +346,10 @@ class ReactNativeUnit extends Unit {
     for (let i = 0; i < childrenUnits.length; i++) {
       let unit = childrenUnits[i];
       let element: Element = unit._currentElement as Element;
-      let key = (element.props?.key) || i.toString();
+      let key = element.props?.key || i.toString();
       map[key] = unit;
     }
+    // console.log('[p1.30]',{map})
     return map;
   }
 
@@ -399,10 +451,11 @@ export class ReactCompositUnit extends Unit {
     let preRenderElement = preRenderUnitInstance._currentElement;
 
     // componentInstance 已经改了 state，所以 jsx 也是最新的。
-    // 注意 react 的 render 
+    // 注意 react 的 render
     let nextRenderElement = this.componentInstance.render();
 
     if (shouldDeepCompare(preRenderElement, nextRenderElement)) {
+      console.log('[p1.01] shouldDeepCompare')
       // 如果可以进行深比较，则把更新的工作交给更新前的 unit
       preRenderUnitInstance.update(nextRenderElement);
       this.componentInstance.componentDidUpdate &&
@@ -427,9 +480,11 @@ export class ReactCompositUnit extends Unit {
       componentInstance.componentWillMount();
 
     // 拿到的是 jsx，Element
-    let reactComponentRender: Element = componentInstance.render();
+    const jsx: Element = componentInstance.render();
+
+    console.log('[p1.0]',{jsx})
     let renderUnit: Unit = (this._renderUnit =
-      createReactUnit(reactComponentRender));
+      createReactUnit(jsx));
 
     // console.log("[p1.4]", { renderUnit, rootId });
 
