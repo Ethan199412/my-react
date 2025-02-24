@@ -22,6 +22,7 @@ function render(element: Element, container: HTMLElement) {
   const createReactUnitInstance: Unit = createReactUnit(element);
 
   // 大多数情况下
+  
   const markUp: string = createReactUnitInstance.getMarkUp(React.nextRootIndex);
 
   // console.log('[p1.0]',{markUp})

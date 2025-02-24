@@ -18,24 +18,24 @@ export class TestDiff extends React.Component<any> {
 
   handleAdd = () => {
     const { list } = this.state;
-    list.push(list[list.length - 1]+1);
+    list.push(list[list.length - 1] ? list[list.length - 1]+1 :  1);
     this.setState({
       list: [...list],
     });
-  }
+  };
 
   render() {
     const { list } = this.state;
     return (
       <div>
-      <div>
         {list.map((e, index) => (
-          <div key={'key-'+e} onClick={() => this.handleClick(index)}>
+          <div  onClick={() => this.handleClick(index)}>
             {e}
           </div>
         ))}
-      </div>
-      <button onClick={this.handleAdd}>add</button>
+        <button onClick={this.handleAdd}>
+          add
+        </button>
       </div>
     );
   }
