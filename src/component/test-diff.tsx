@@ -29,7 +29,7 @@ export class TestDiff extends React.Component<any> {
     return (
       <div>
         {list.map((e, index) => (
-          <div  onClick={() => this.handleClick(index)}>
+          <div key={e} onClick={() => this.handleClick(index)}>
             {e}
           </div>
         ))}
@@ -51,12 +51,22 @@ export class TestDiff2 extends React.Component<any> {
 
   handleClick = () => {
     const { list } = this.state;
-    list.splice(0, 1);
-    list.splice(1, 1);
+
     this.setState({
-      list: [...list],
+      list: [1,3],
     });
   };
+
+  handleAdd = () => {
+    const {list} = this.state;
+    const lastNumber = list[list.length - 1] ? list[list.length - 1] : 0;
+
+    list.push(lastNumber + 1);
+    this.setState({
+      list: [...list],
+    })
+    
+  }
 
   render() {
     const { list } = this.state;
@@ -64,10 +74,11 @@ export class TestDiff2 extends React.Component<any> {
       <div>
         <div>
           {list.map((e, index) => (
-            <div key={e}>{e}</div>
+            <div key={'key-'+e}>{e}</div>
           ))}
         </div>
-        <button onClick={this.handleClick}>click</button>
+        <button onClick={this.handleClick}>del</button>
+        <button onClick={this.handleAdd}>Add</button>
       </div>
     );
   }
