@@ -109,7 +109,7 @@ class ReactNativeUnit extends Unit {
             childUnitInstance._mountIndex = idx;
             this._renderedChildrenUnits.push(childUnitInstance);
 
-            return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
+            return childUnitInstance.getMarkUp(`${rootId}-${idx}`);
           })
           .join("");
       }
@@ -274,6 +274,7 @@ class ReactNativeUnit extends Unit {
             (item) => item != oldChildUnit
           );
           // 取消 .${oldChildUnit._rootId} 的所有事件委托
+          console.log('[p1.4] 删除委托',{id: oldChildUnit._rootId})
           $(document).undelegate(`.${oldChildUnit._rootId}`);
         }
         diffQueue.push({
@@ -281,7 +282,7 @@ class ReactNativeUnit extends Unit {
           parentNode: $(`[data-reactid="${this._rootId}"]`),
           type: NodeAction.Insert,
           toIndex: i,
-          markup: newUnit.getMarkUp(`${this._rootId}.${i}`),
+          markup: newUnit.getMarkUp(`${this._rootId}-${i}`),
         });
       }
       newUnit._mountIndex = i;
@@ -377,6 +378,7 @@ class ReactNativeUnit extends Unit {
         // }
       }
       if (/^on[A-Z]/.test(propName)) {
+        console.log('[p1.41] 解绑事件',{id: this._rootId})
         $(document).undelegate(`.${this._rootId}`);
       }
     }
@@ -391,6 +393,7 @@ class ReactNativeUnit extends Unit {
         let eventName = propName.slice(2).toLowerCase();
 
         // 如果新属性有事件，增添加事件委托，看起来无论如何都再新增一次事件
+        console.log('[p1.42] 绑定事件',{id: this._rootId})
         $(document).delegate(
           `[data-reactid="${this._rootId}"]`,
           `${eventName}.${this._rootId}`,
