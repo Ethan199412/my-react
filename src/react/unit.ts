@@ -88,6 +88,7 @@ class ReactNativeUnit extends Unit {
     for (let propName in props) {
       // 如果是事件
       if (/on[A-Z]/.test(propName)) {
+        // onClick -> click
         let eventType = propName.slice(2).toLowerCase(); // string click
 
         // 使用事件委托，降低内促占用
@@ -109,7 +110,7 @@ class ReactNativeUnit extends Unit {
             childUnitInstance._mountIndex = idx;
             this._renderedChildrenUnits.push(childUnitInstance);
 
-            return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
+            return childUnitInstance.getMarkUp(`${rootId}-${idx}`);
           })
           .join("");
       }
@@ -156,6 +157,7 @@ class ReactNativeUnit extends Unit {
 
   // 通过 diffQueue 更新真实 dom
   // 就通俗的记忆 patch 方法是为了更新真实 dom 的
+  // 如果只是 MOVE，其实方法是先删除然后再插入
   patch(diffQueue: IDiff[]) {
     //debugger
     let deleteChildren: $<HTMLElement>[] = [];
@@ -256,6 +258,7 @@ class ReactNativeUnit extends Unit {
             fromIndex: oldChildUnit._mountIndex,
             toIndex: i,
           });
+          console.log('[p1.20] diff队列 push')
         }
         lastIndex = Math.max(lastIndex, oldChildUnit._mountIndex);
       } else {
@@ -274,6 +277,7 @@ class ReactNativeUnit extends Unit {
             (item) => item != oldChildUnit
           );
           // 取消 .${oldChildUnit._rootId} 的所有事件委托
+          console.log('[p2.0] 取消委托',{rootId: oldChildUnit._rootId})
           $(document).undelegate(`.${oldChildUnit._rootId}`);
         }
         diffQueue.push({
@@ -281,7 +285,7 @@ class ReactNativeUnit extends Unit {
           parentNode: $(`[data-reactid="${this._rootId}"]`),
           type: NodeAction.Insert,
           toIndex: i,
-          markup: newUnit.getMarkUp(`${this._rootId}.${i}`),
+          markup: newUnit.getMarkUp(`${this._rootId}-${i}`),
         });
       }
       newUnit._mountIndex = i;
@@ -305,6 +309,7 @@ class ReactNativeUnit extends Unit {
           (item) => item != oldChild
         );
         // 解除事件委托
+        console.log('[p2.01] 取消委托',{rootId: oldChild._rootId})
         $(document).undelegate(`.${oldChild._rootId}`);
       }
     }
@@ -372,11 +377,9 @@ class ReactNativeUnit extends Unit {
 
         // 如果老的属性有，担新的属性没有，且该属性是事件，需要解绑事件
         // 在这里加是不对的，想想为什么？因为后面还会再次绑定事件
-        // if (/^on[A-Z]/.test(propName)) {
-        //   $(document).undelegate(`.${this._rootId}`);
-        // }
       }
       if (/^on[A-Z]/.test(propName)) {
+        console.log('[p2.02] 取消委托',{id: this._rootId})
         $(document).undelegate(`.${this._rootId}`);
       }
     }
@@ -389,7 +392,7 @@ class ReactNativeUnit extends Unit {
       // 如果是事件处理函数
       else if (/^on[A-Z]/.test(propName)) {
         let eventName = propName.slice(2).toLowerCase();
-
+        console.log('[p2.04]新增委托',{id: this._rootId, eventName})
         // 如果新属性有事件，增添加事件委托，看起来无论如何都再新增一次事件
         $(document).delegate(
           `[data-reactid="${this._rootId}"]`,
