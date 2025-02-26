@@ -394,6 +394,7 @@ class ReactNativeUnit extends Unit {
         let eventName = propName.slice(2).toLowerCase();
         console.log('[p2.04]新增委托',{id: this._rootId, eventName})
         // 如果新属性有事件，增添加事件委托，看起来无论如何都再新增一次事件
+        console.log('[p1.42] 绑定事件',{id: this._rootId})
         $(document).delegate(
           `[data-reactid="${this._rootId}"]`,
           `${eventName}.${this._rootId}`,
