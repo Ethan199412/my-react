@@ -26,7 +26,7 @@ export class TestDiff extends React.Component<any> {
 
   handleUpdate=()=>{
     this.setState({
-      list: [3,1,4,2],
+      list: [3,5,1,4,2],
     });
   }
 
