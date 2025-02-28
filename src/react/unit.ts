@@ -171,6 +171,7 @@ class ReactNativeUnit extends Unit {
     let deleteChildren: $<HTMLElement>[] = [];
     let deleteMap: Record<number, $<HTMLElement>> = {};
 
+    console.log("[p3.20] render", [...this._renderedChildrenUnits]);
     for (let i = 0; i < diffQueue.length; i++) {
       let difference: IDiff = diffQueue[i];
       if (
@@ -186,7 +187,6 @@ class ReactNativeUnit extends Unit {
         deleteChildren.push(oldChild);
 
         // 更新 childUnits
-        this._renderedChildrenUnits.splice(fromIndex, 1);
         // this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
         //   (e) => e != unit
         // );
@@ -195,6 +195,15 @@ class ReactNativeUnit extends Unit {
     console.log("[p2.1]", {
       deleteChildren: deleteChildren.map((e) => e.html()),
     });
+    const deletedIndices = Object.keys(deleteMap);
+    const newRenderedChildrenUnits = [];
+    for (let i = 0; i < this._renderedChildrenUnits.length; i++) {
+      if (!deletedIndices.includes(i.toString())) {
+        newRenderedChildrenUnits.push(this._renderedChildrenUnits[i]);
+      }
+    }
+    this._renderedChildrenUnits = newRenderedChildrenUnits;
+    console.log("[p3.2]", { newRenderedChildrenUnits });
     // 更新真实 dom
     $.each(deleteChildren, (idx, item) => $(item).remove());
 
@@ -222,6 +231,10 @@ class ReactNativeUnit extends Unit {
         }
       }
     }
+
+    console.log("[p3.2]", {
+      newRenderedChildrenUnits: this._renderedChildrenUnits,
+    });
   }
   insertChildAt(
     parentNode: $<HTMLElement>,
@@ -249,6 +262,8 @@ class ReactNativeUnit extends Unit {
       newChildrenUnitMap,
     });
 
+    const currentLayerDiffQueue = [];
+
     // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
     for (let i = 0; i < newChildrenUnits.length; i++) {
@@ -274,14 +289,16 @@ class ReactNativeUnit extends Unit {
         });
         if (oldChildUnit._mountIndex < lastIndex) {
           // console.log("[p1.22]");
-          diffQueue.push({
+          const diff = {
             parentId: this._rootId, // 节点自己的 reactid
             parentNode: $(`[data-reactid="${this._rootId}"]`),
             type: NodeAction.Move,
             fromIndex: oldChildUnit._mountIndex,
             toIndex: i,
             unit: oldChildUnit,
-          });
+          };
+          diffQueue.push(diff);
+          currentLayerDiffQueue.push(diff);
           console.log("[p1.20] diff队列 push");
         }
         lastIndex = Math.max(lastIndex, oldChildUnit._mountIndex);
@@ -293,13 +310,15 @@ class ReactNativeUnit extends Unit {
         // 如果是新增，则老的 oldChildUnit 是不存在的
         if (oldChildUnit) {
           // console.log("[p1.23]");
-          diffQueue.push({
+          const diff = {
             parentId: this._rootId,
             parentNode: $(`[data-reactid="${this._rootId}"]`),
             type: NodeAction.Remove,
             fromIndex: oldChildUnit._mountIndex,
             unit: oldChildUnit,
-          });
+          };
+          diffQueue.push(diff);
+          currentLayerDiffQueue.push(diff);
           // this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
           //   (item) => item != oldChildUnit
           // );
@@ -309,14 +328,16 @@ class ReactNativeUnit extends Unit {
         }
 
         // this._renderedChildrenUnits.splice(i, 0, newUnit);
-        diffQueue.push({
+        const diff = {
           parentId: this._rootId,
           parentNode: $(`[data-reactid="${this._rootId}"]`),
           type: NodeAction.Insert,
           toIndex: i,
           markup: newUnit.getMarkUp(`${this._rootId}-${generateUuid()}`),
           unit: newUnit,
-        });
+        };
+        diffQueue.push(diff);
+        currentLayerDiffQueue.push(diff);
       }
       newUnit._mountIndex = i;
     }
@@ -333,13 +354,15 @@ class ReactNativeUnit extends Unit {
           oldChild,
           mountIndex: oldChild._mountIndex,
         });
-        diffQueue.push({
+        const diff = {
           parentId: this._rootId,
           parentNode: $(`[data-reactid="${this._rootId}"]`),
           type: NodeAction.Remove,
           fromIndex: oldChild._mountIndex,
           unit: oldChild,
-        });
+        };
+        diffQueue.push(diff);
+        currentLayerDiffQueue.push(diff);
         // this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
         //   (item) => item != oldChild
         // );
@@ -349,11 +372,32 @@ class ReactNativeUnit extends Unit {
       }
     }
 
-    // this.updateRenderChildrenUnits()
+    this.updateRenderedChildrenUnits(currentLayerDiffQueue);
     // console.log("[p1.21]", { diffQueue: [...diffQueue] });
   }
-  updateRenderChildrenUnits() {
+  updateRenderedChildrenUnits(currentLayerDiffQueue: IDiff[] = []) {
+    if(currentLayerDiffQueue.length === 0) return
     const oldProps = (this._currentElement as Element).props;
+
+    const needRemoveKeys = currentLayerDiffQueue.map(
+      (e: any) => e.unit._currentElement.props.key
+    );
+    console.log('[p3.30]',{needRemoveKeys, currentLayerDiffQueue})
+    this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
+      (e: any) => !needRemoveKeys.includes(e._currentElement.props.key)
+    );
+    currentLayerDiffQueue.forEach(diff=>{
+      const {unit, fromIndex, toIndex, type} = diff
+      switch(type){
+        case NodeAction.Insert:
+          this._renderedChildrenUnits.splice(toIndex, 0, unit)
+          break
+        case NodeAction.Move:
+          this._renderedChildrenUnits.splice(toIndex, 0, unit)
+          break
+      }
+    })
+    console.log('[p3.3]', {units: this._renderedChildrenUnits})
   }
   getNewChildren(
     oldChildrenUnitMap: Record<string, Unit>,
@@ -392,14 +436,19 @@ class ReactNativeUnit extends Unit {
       let unit = childrenUnits[i];
       let element: Element = unit._currentElement as Element;
       let key = element.props?.key || i.toString();
-      console.log('[p1.11]',{key, unit})
-      if(map[key]){
-        console.log('[WARNING] key 重复', {key, unit})
+      console.log("[p1.11]", { key, unit });
+      if (map[key]) {
+        console.log("[WARNING] key 重复", { key, unit });
       }
       map[key] = unit;
     }
     if (Object.keys(map).length >= 7) {
-      console.log("[p1.10]", { map, childrenUnits, keys: Object.keys(map), keys2: childrenUnits.map((e:any)=>e._currentElement.props.key) });
+      console.log("[p1.10]", {
+        map,
+        childrenUnits,
+        keys: Object.keys(map),
+        keys2: childrenUnits.map((e: any) => e._currentElement.props.key),
+      });
     }
     return map;
   }

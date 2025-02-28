@@ -7,11 +7,9 @@
   </head>
   <body>
     <script>
+      // 其实这个就是所谓的 react 的高大上的 diff 算法
       const oldArr = [
-        { key: "d", name: "d" },
-        { key: "a", name: "a" },
-        { key: "b", name: "b" },
-        { key: "c", name: "c" },
+        
       ];
 
       const newArr = [
@@ -33,7 +31,7 @@
         const oldMap = genMap(oldArr);
         const newMap = genMap(newArr);
 
-        let tempArr = JSON.parse(JSON.stringify(oldArr));
+        let tempArr = [...oldArr]
         console.log("[p1.1]", { oldMap, newMap });
 
         let lastIndex = 0;
@@ -104,6 +102,7 @@
         });
       }
       const { diffQueue, tempArr } = diff(oldArr, newArr);
+      console.log('[p0.9]',{tempArr:[...tempArr]})
       patch(diffQueue, tempArr);
       console.log("[p1.0]", { diffQueue, tempArr });
     </script>
