@@ -1,10 +1,13 @@
 import React from "../react/index.ts";
+// import React from 'react'
 
-export class TestDiff extends React.Component<any> {
+// import * as React from 'react'
+export class TestDiff extends React.Component<any, any> {
+  state: any;
   constructor(props) {
     super(props);
     this.state = {
-      list: [1, 2, 3, 4],
+      list: [3, 1, 5, 2, 4],
     };
   }
 
@@ -18,31 +21,36 @@ export class TestDiff extends React.Component<any> {
 
   handleAdd = () => {
     const { list } = this.state;
-    list.push(list[list.length - 1]+1);
+    list.push(Math.max(...list) + 1);
     this.setState({
       list: [...list],
     });
-  }
+  };
 
-  handleUpdate=()=>{
+  handleUpdate = () => {
     this.setState({
-      list: [3,5,1,4,2],
+      list: [3, 5, 1, 4, 2],
     });
-  }
+  };
 
+  // 问题的原因在于 oldChildrenMap 里面的 rootId 重复了
   render() {
     const { list } = this.state;
     return (
       <div>
         <div>
           {list.map((e, index) => (
-            <div key={'key-'+e} onClick={() => this.handleDel(index)}>
+            <div key={e} onClick={() => this.handleDel(index)}>
               {e}
             </div>
           ))}
+          <button key={"btn-add"} onClick={this.handleAdd}>
+            add
+          </button>
+          <button key={"btn-up"} onClick={this.handleUpdate}>
+            update
+          </button>
         </div>
-        <button onClick={this.handleAdd}>add</button>
-        <button onClick={this.handleUpdate}>update</button>
       </div>
     );
   }

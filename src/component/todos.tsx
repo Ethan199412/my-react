@@ -46,7 +46,7 @@ export default class Todos extends React.Component {
   renderList = (list) => {
     return list.map((e, index) => {
       return (
-        <div>
+        <div key={e}>
           <span>{e}</span>
           <button onClick={() => this.onDel(index)}>删除</button>
         </div>

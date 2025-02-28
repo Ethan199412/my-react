@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const oldArr = [
+        { key: "d", name: "d" },
+        { key: "a", name: "a" },
+        { key: "b", name: "b" },
+        { key: "c", name: "c" },
+      ];
+
+      const newArr = [
+        { key: "a", name: "a" },
+        { key: "d", name: "d" },
+        { key: "e", name: "e" },
+        { key: "c", name: "c" },
+        { key: "b", name: "b" },
+      ];
+
+      function genMap(arr) {
+        const map = {};
+        arr.forEach((item, index) => {
+          map[item.key] = { item, index };
+        });
+        return map;
+      }
+      function diff(oldArr, newArr) {
+        const oldMap = genMap(oldArr);
+        const newMap = genMap(newArr);
+
+        let tempArr = JSON.parse(JSON.stringify(oldArr));
+        console.log("[p1.1]", { oldMap, newMap });
+
+        let lastIndex = 0;
+        const diffQueue = [];
+        for (let i = 0; i < newArr.length; i++) {
+          const newItem = newArr[i];
+
+          // 如果老 arr 存在该元素
+          if (oldMap[newItem.key]) {
+            const index = oldMap[newItem.key].index;
+            console.log({ index, lastIndex });
+            // 需要移动
+            if (index < lastIndex) {
+              diffQueue.push({
+                type: "move",
+                from: index,
+                to: i,
+                item: oldMap[newItem.key].item,
+              });
+            }
+            lastIndex = Math.max(lastIndex, index);
+          }
+
+          // 如果老 arr 不存在该元素，那么证明是新增的
+          else {
+            diffQueue.push({
+              type: "add",
+              index: i,
+              item: newItem,
+            });
+          }
+        }
+
+        for (let i = 0; i < oldArr.length; i++) {
+          const oldItem = oldArr[i];
+          if (!newMap[oldItem.key]) {
+            diffQueue.push({
+              type: "remove",
+              index: i,
+              item: oldItem,
+            });
+          }
+        }
+
+        const delArr = [];
+        for (let i = 0; i < diffQueue.length; i++) {
+          const patch = diffQueue[i];
+          // 需要被移动的要先干掉
+          if (patch.type == "move" || patch.type == "remove") {
+            delArr.push(patch.item.key);
+          }
+        }
+        tempArr = tempArr.filter((item) => !delArr.includes(item.key));
+        return { diffQueue, tempArr };
+      }
+
+      function patch(diffQueue, tempArr) {
+        diffQueue.forEach((patch) => {
+          const { type, index, item, from, to } = patch;
+          switch (type) {
+            case "add":
+              tempArr.splice(index, 0, item);
+              break;
+            case "move":
+              tempArr.splice(to, 0, item);
+              break;
+          }
+        });
+      }
+      const { diffQueue, tempArr } = diff(oldArr, newArr);
+      patch(diffQueue, tempArr);
+      console.log("[p1.0]", { diffQueue, tempArr });
+    </script>
+  </body>
+</html>
