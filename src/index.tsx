@@ -1,5 +1,5 @@
 import React from "./react/index.ts";
-import Todo from "./component/todo.tsx"
-import Test from "./component/test"
+import Todos from "./component/todos.tsx"
+import {TestDiff, TestDiff2} from './component/test-diff.tsx'
 
-React.render(<Test />, document.getElementById("root"));
+React.render(<TestDiff />, document.getElementById("root"));
