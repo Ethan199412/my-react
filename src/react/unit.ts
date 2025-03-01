@@ -2,6 +2,7 @@ import $ from "jquery";
 import { Element } from "./element.ts";
 import types, { NodeAction } from "./types.ts";
 import Component from "./component.ts";
+import { generateUuid } from "./common/utils.ts";
 
 interface IDiff {
   parentId: string; // 父 dom 的 id
@@ -42,7 +43,7 @@ class ReactTextUnit extends Unit {
   }
   getMarkUp(rootId: string): string {
     this._rootId = rootId;
-    let markUp = `<span data-reactid="${rootId}">${
+    let markUp = `<span data-reactid="${this._rootId}">${
       this._currentElement as String | Number
     }</span>`;
     return markUp;
@@ -80,7 +81,7 @@ class ReactNativeUnit extends Unit {
   getMarkUp(rootId: string): string {
     this._rootId = rootId;
     let { type, props } = this._currentElement as Element;
-    let tagStart: string = `<${type} data-reactid="${rootId}"`;
+    let tagStart: string = `<${type} data-reactid="${this._rootId}"`;
     let tagEnd: string = `</${type}>`;
 
     this._renderedChildrenUnits = [];
@@ -93,8 +94,8 @@ class ReactNativeUnit extends Unit {
         // 使用事件委托，降低内促占用
         // 通过委托顶级dom，给满足特定条件的子元素绑定事件，其中 props[propname] 为事件处理函数
         $(document).delegate(
-          `[data-reactid="${rootId}"]`,
-          `${eventType}.${rootId}`,
+          `[data-reactid="${this._rootId}"]`,
+          `${eventType}.${this._rootId}`,
           props[propName]
         );
       }
@@ -109,7 +110,9 @@ class ReactNativeUnit extends Unit {
             childUnitInstance._mountIndex = idx;
             this._renderedChildrenUnits.push(childUnitInstance);
 
-            return childUnitInstance.getMarkUp(`${rootId}.${idx}`);
+            return childUnitInstance.getMarkUp(
+              `${this._rootId}-${generateUuid()}`
+            );
           })
           .join("");
       }
@@ -171,18 +174,20 @@ class ReactNativeUnit extends Unit {
         let oldChild: $<HTMLElement> = $(
           difference.parentNode.children().get(fromIndex)
         );
-        console.log('[p2.0]',{oldChild, value: oldChild.html()})
+        console.log("[p2.0]", { oldChild, value: oldChild.html() });
         deleteMap[fromIndex] = oldChild;
         deleteChildren.push(oldChild);
       }
     }
-    console.log('[p2.1]',{deleteChildren:deleteChildren.map(e=>e.html())})
+    console.log("[p2.1]", {
+      deleteChildren: deleteChildren.map((e) => e.html()),
+    });
     // 更新真实 dom
     $.each(deleteChildren, (idx, item) => $(item).remove());
 
     for (let i = 0; i < diffQueue.length; i++) {
       let difference = diffQueue[i];
-      const {type} = difference
+      const { type } = difference;
       if ([NodeAction.Insert, NodeAction.Move].includes(type)) {
         switch (type) {
           case NodeAction.Insert:
@@ -225,11 +230,13 @@ class ReactNativeUnit extends Unit {
     );
     console.log("[p1.1]", {
       oldChildrenUnitMap,
-      newChildrenUnitMap
+      newChildrenUnitMap,
+      childUnits: JSON.parse(JSON.stringify(this._renderedChildrenUnits)),
     });
 
     // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
+    const thisLayerDiff = [];
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
       newUnit._currentElement = newUnit._currentElement as Element;
@@ -246,7 +253,11 @@ class ReactNativeUnit extends Unit {
       // 如果类型一致
       if (oldChildUnit === newUnit) {
         // _mountIndex 的意思是在父节点中的位置
-        console.log('[p1.2]',{oldChildUnit, lastIndex, mountIndex: oldChildUnit._mountIndex})
+        console.log("[p1.2]", {
+          oldChildUnit,
+          lastIndex,
+          mountIndex: oldChildUnit._mountIndex,
+        });
         if (oldChildUnit._mountIndex < lastIndex) {
           // console.log("[p1.22]");
           diffQueue.push({
@@ -256,6 +267,16 @@ class ReactNativeUnit extends Unit {
             fromIndex: oldChildUnit._mountIndex,
             toIndex: i,
           });
+          thisLayerDiff.push({
+            toIndex: i,
+            unit: oldChildUnit,
+          });
+          // units 也需要删除 remove 和 move 类型的
+          // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
+          this._renderedChildrenUnits = this._renderedChildrenUnits.filter((e) => e !== oldChildUnit);
+          console.log("[p3.33] delete in child units", [
+            ...this._renderedChildrenUnits,
+          ]);
         }
         lastIndex = Math.max(lastIndex, oldChildUnit._mountIndex);
       } else {
@@ -270,9 +291,11 @@ class ReactNativeUnit extends Unit {
             type: NodeAction.Remove,
             fromIndex: oldChildUnit._mountIndex,
           });
-          this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
-            (item) => item != oldChildUnit
-          );
+          // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
+          this._renderedChildrenUnits = this._renderedChildrenUnits.filter((e) => e !== oldChildUnit);
+          console.log("[p3.331] delete in child units", [
+            ...this._renderedChildrenUnits,
+          ]);
           // 取消 .${oldChildUnit._rootId} 的所有事件委托
           $(document).undelegate(`.${oldChildUnit._rootId}`);
         }
@@ -281,7 +304,12 @@ class ReactNativeUnit extends Unit {
           parentNode: $(`[data-reactid="${this._rootId}"]`),
           type: NodeAction.Insert,
           toIndex: i,
-          markup: newUnit.getMarkUp(`${this._rootId}.${i}`),
+          markup: newUnit.getMarkUp(`${this._rootId}-${generateUuid()}`),
+        });
+
+        thisLayerDiff.push({
+          toIndex: i,
+          unit: newUnit,
         });
       }
       newUnit._mountIndex = i;
@@ -290,24 +318,37 @@ class ReactNativeUnit extends Unit {
     // 在这里的时候，例子是 element 为 [1,2,3] 和 [1,2]，oldMap 是 1,3,3，newMap 是 1,3
     // console.log("[p1.3]", { oldChildrenUnitMap, newChildrenUnitMap });
     for (let oldKey in oldChildrenUnitMap) {
-      let oldChild = oldChildrenUnitMap[oldKey];
+      let oldChildUnit = oldChildrenUnitMap[oldKey];
 
       // 如果老的有，新的没有，那么删除
       if (!newChildrenUnitMap.hasOwnProperty(oldKey)) {
-        console.log("[p1.24]",{oldKey, oldChild, mountIndex: oldChild._mountIndex});
         diffQueue.push({
           parentId: this._rootId,
           parentNode: $(`[data-reactid="${this._rootId}"]`),
           type: NodeAction.Remove,
-          fromIndex: oldChild._mountIndex,
+          fromIndex: oldChildUnit._mountIndex,
         });
-        this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
-          (item) => item != oldChild
-        );
+        this._renderedChildrenUnits = this._renderedChildrenUnits.filter((e) => e !== oldChildUnit);
+        // const index = this._renderedChildrenUnits.findIndex(e=>e===oldChildUnit)
+        // console.log("[p3.332] delete in child units",{index}, [
+        //   ...this._renderedChildrenUnits,
+        // ]);
+        // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
         // 解除事件委托
-        $(document).undelegate(`.${oldChild._rootId}`);
+        $(document).undelegate(`.${oldChildUnit._rootId}`);
       }
     }
+
+    console.log("[p3.3]", thisLayerDiff, {
+      childUnits: [...this._renderedChildrenUnits],
+    });
+    for (let i = 0; i < thisLayerDiff.length; i++) {
+      const { unit, toIndex } = thisLayerDiff[i];
+      this._renderedChildrenUnits.splice(toIndex, 0, unit);
+    }
+    console.log("[p3.30] update renderChildrenUnits", {
+      childUnits: [...this._renderedChildrenUnits],
+    });
     // console.log("[p1.21]", { diffQueue: [...diffQueue] });
   }
   getNewChildren(
@@ -330,10 +371,11 @@ class ReactNativeUnit extends Unit {
         newChildrenUnitMap[newKey] = oldUnit;
       } else {
         // 不能复用，则重新利用虚拟 dom 创建 unit
+        console.log("[p3.32]", { newElement });
         let nextUnit = createReactUnit(newElement);
         newChildrenUnits.push(nextUnit);
         newChildrenUnitMap[newKey] = nextUnit;
-        this._renderedChildrenUnits[index] = nextUnit;
+        // this._renderedChildrenUnits[index] = nextUnit;
       }
     });
     return {
@@ -455,7 +497,7 @@ export class ReactCompositUnit extends Unit {
     let nextRenderElement = this.componentInstance.render();
 
     if (shouldDeepCompare(preRenderElement, nextRenderElement)) {
-      console.log('[p1.01] shouldDeepCompare')
+      console.log("[p1.01] shouldDeepCompare");
       // 如果可以进行深比较，则把更新的工作交给更新前的 unit
       preRenderUnitInstance.update(nextRenderElement);
       this.componentInstance.componentDidUpdate &&
@@ -482,14 +524,13 @@ export class ReactCompositUnit extends Unit {
     // 拿到的是 jsx，Element
     const jsx: Element = componentInstance.render();
 
-    console.log('[p1.0]',{jsx})
-    let renderUnit: Unit = (this._renderUnit =
-      createReactUnit(jsx));
+    console.log("[p1.0]", { jsx });
+    let renderUnit: Unit = (this._renderUnit = createReactUnit(jsx));
 
     // console.log("[p1.4]", { renderUnit, rootId });
 
     // unit 转换后的 html 字符串
-    let markup = renderUnit.getMarkUp(rootId);
+    let markup = renderUnit.getMarkUp(this._rootId);
 
     // 在递归后绑定的事件，儿子先绑定成功，再绑定父亲。
     document.addEventListener("mounted", () => {
