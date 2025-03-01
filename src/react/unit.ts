@@ -185,6 +185,8 @@ class ReactNativeUnit extends Unit {
       oldChildrenUnitMap,
       newChildrenElements
     );
+
+    console.log('[IMPORTANT]',{newChildrenUnitMap, oldChildrenUnitMap, units: this._renderedChildrenUnits})
     let lastIndex = 0;
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
