@@ -4,7 +4,7 @@ export class TestDiff extends React.Component<any> {
   constructor(props) {
     super(props);
     this.state = {
-      list: [3,1,5,2,4],
+      list: [1,2,3,4,5],
     };
   }
 
