@@ -226,7 +226,8 @@ class ReactNativeUnit extends Unit {
     );
     console.log("[p1.1]", {
       oldChildrenUnitMap,
-      newChildrenUnitMap
+      newChildrenUnitMap,
+      childUnits: JSON.parse(JSON.stringify(this._renderedChildrenUnits))
     });
 
     // 这里 lastIndex 的含义是在父节点中的位置
@@ -322,12 +323,13 @@ class ReactNativeUnit extends Unit {
       }
     }
 
-    console.log('[p3.3]',thisLayerDiff)
+    console.log('[p3.3]',thisLayerDiff,{childUnits: [...this._renderedChildrenUnits]})
     for(let i = 0; i < thisLayerDiff.length; i++) {
       const {unit, toIndex} = thisLayerDiff[i]
       this._renderedChildrenUnits.splice(toIndex, 0, unit)
-      console.log('[p3.30] update renderChildrenUnits')
+      
     }
+    console.log('[p3.30] update renderChildrenUnits',{childUnits: [...this._renderedChildrenUnits]})
     // console.log("[p1.21]", { diffQueue: [...diffQueue] });
   }
   getNewChildren(
@@ -350,10 +352,11 @@ class ReactNativeUnit extends Unit {
         newChildrenUnitMap[newKey] = oldUnit;
       } else {
         // 不能复用，则重新利用虚拟 dom 创建 unit
+        console.log('[p3.32]',{newElement})
         let nextUnit = createReactUnit(newElement);
         newChildrenUnits.push(nextUnit);
         newChildrenUnitMap[newKey] = nextUnit;
-        this._renderedChildrenUnits[index] = nextUnit;
+        // this._renderedChildrenUnits[index] = nextUnit;
       }
     });
     return {
