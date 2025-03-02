@@ -18,7 +18,7 @@ export class TestDiff extends React.Component<any> {
 
   handleAdd = () => {
     const { list } = this.state;
-    list.push(Math.max(...list) + 1);
+    list.push(Math.max(...list) + 1, Math.max(...list) + 2);
     this.setState({
       list: [...list],
     });
