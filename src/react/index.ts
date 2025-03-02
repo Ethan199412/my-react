@@ -24,7 +24,6 @@ function render(element: Element, container: HTMLElement) {
   // 大多数情况下
   const markUp: string = createReactUnitInstance.getMarkUp(React.nextRootIndex);
 
-  // console.log('[p1.0]',{markUp})
   container.innerHTML = markUp;
 
   //触发 componentDidMount

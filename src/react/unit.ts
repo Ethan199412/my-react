@@ -138,11 +138,6 @@ class ReactNativeUnit extends Unit {
 
     // 这里的 updateDepth 指的是更新的级别，如果是 0，说明是第一次更新
     updateDepth++;
-    // console.log("[p1.0]", {
-    //   diffQueue: JSON.parse(JSON.stringify(diffQueue)),
-    //   updateDepth,
-    //   newChildrenElements,
-    // });
     this.diff(diffQueue, newChildrenElements);
     updateDepth--;
 
@@ -174,14 +169,11 @@ class ReactNativeUnit extends Unit {
         let oldChild: $<HTMLElement> = $(
           difference.parentNode.children().get(fromIndex)
         );
-        console.log("[p2.0]", { oldChild, value: oldChild.html() });
         deleteMap[fromIndex] = oldChild;
         deleteChildren.push(oldChild);
       }
     }
-    console.log("[p2.1]", {
-      deleteChildren: deleteChildren.map((e) => e.html()),
-    });
+
     // 更新真实 dom
     $.each(deleteChildren, (idx, item) => $(item).remove());
 
@@ -228,11 +220,6 @@ class ReactNativeUnit extends Unit {
       oldChildrenUnitMap,
       newChildrenElements
     );
-    console.log("[p1.1]", {
-      oldChildrenUnitMap,
-      newChildrenUnitMap,
-      childUnits: JSON.parse(JSON.stringify(this._renderedChildrenUnits)),
-    });
 
     // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
@@ -245,21 +232,10 @@ class ReactNativeUnit extends Unit {
       let newKey = newUnit._currentElement.props?.key || i.toString();
       let oldChildUnit = oldChildrenUnitMap[newKey];
 
-      // console.log("[p1.2]", {
-      //   oldChildUnit: JSON.parse(JSON.stringify(oldChildUnit)),
-      //   newUnit: JSON.parse(JSON.stringify(newUnit)),
-      //   lastIndex,
-      // });
       // 如果类型一致
       if (oldChildUnit === newUnit) {
         // _mountIndex 的意思是在父节点中的位置
-        console.log("[p1.2]", {
-          oldChildUnit,
-          lastIndex,
-          mountIndex: oldChildUnit._mountIndex,
-        });
         if (oldChildUnit._mountIndex < lastIndex) {
-          // console.log("[p1.22]");
           diffQueue.push({
             parentId: this._rootId, // 节点自己的 reactid
             parentNode: $(`[data-reactid="${this._rootId}"]`),
@@ -274,9 +250,6 @@ class ReactNativeUnit extends Unit {
           // units 也需要删除 remove 和 move 类型的
           // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
           this._renderedChildrenUnits = this._renderedChildrenUnits.filter((e) => e !== oldChildUnit);
-          console.log("[p3.33] delete in child units", [
-            ...this._renderedChildrenUnits,
-          ]);
         }
         lastIndex = Math.max(lastIndex, oldChildUnit._mountIndex);
       } else {
@@ -284,7 +257,6 @@ class ReactNativeUnit extends Unit {
         // 先删再加
         // 如果是新增，则老的 oldChildUnit 是不存在的
         if (oldChildUnit) {
-          // console.log("[p1.23]");
           diffQueue.push({
             parentId: this._rootId,
             parentNode: $(`[data-reactid="${this._rootId}"]`),
@@ -293,9 +265,6 @@ class ReactNativeUnit extends Unit {
           });
           // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
           this._renderedChildrenUnits = this._renderedChildrenUnits.filter((e) => e !== oldChildUnit);
-          console.log("[p3.331] delete in child units", [
-            ...this._renderedChildrenUnits,
-          ]);
           // 取消 .${oldChildUnit._rootId} 的所有事件委托
           $(document).undelegate(`.${oldChildUnit._rootId}`);
         }
@@ -316,7 +285,6 @@ class ReactNativeUnit extends Unit {
     }
 
     // 在这里的时候，例子是 element 为 [1,2,3] 和 [1,2]，oldMap 是 1,3,3，newMap 是 1,3
-    // console.log("[p1.3]", { oldChildrenUnitMap, newChildrenUnitMap });
     for (let oldKey in oldChildrenUnitMap) {
       let oldChildUnit = oldChildrenUnitMap[oldKey];
 
@@ -329,27 +297,16 @@ class ReactNativeUnit extends Unit {
           fromIndex: oldChildUnit._mountIndex,
         });
         this._renderedChildrenUnits = this._renderedChildrenUnits.filter((e) => e !== oldChildUnit);
-        // const index = this._renderedChildrenUnits.findIndex(e=>e===oldChildUnit)
-        // console.log("[p3.332] delete in child units",{index}, [
-        //   ...this._renderedChildrenUnits,
-        // ]);
         // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
         // 解除事件委托
         $(document).undelegate(`.${oldChildUnit._rootId}`);
       }
     }
 
-    console.log("[p3.3]", thisLayerDiff, {
-      childUnits: [...this._renderedChildrenUnits],
-    });
     for (let i = 0; i < thisLayerDiff.length; i++) {
       const { unit, toIndex } = thisLayerDiff[i];
       this._renderedChildrenUnits.splice(toIndex, 0, unit);
     }
-    console.log("[p3.30] update renderChildrenUnits", {
-      childUnits: [...this._renderedChildrenUnits],
-    });
-    // console.log("[p1.21]", { diffQueue: [...diffQueue] });
   }
   getNewChildren(
     oldChildrenUnitMap: Record<string, Unit>,
@@ -363,7 +320,6 @@ class ReactNativeUnit extends Unit {
       let oldUnit = oldChildrenUnitMap[newKey];
       let oldElement = oldUnit?._currentElement;
       if (shouldDeepCompare(oldElement, newElement)) {
-        // console.log('[p1.3]',{oldElement, newElement})
 
         // 把更新完的 unit 往队列里面放
         oldUnit.update(newElement);
@@ -371,7 +327,6 @@ class ReactNativeUnit extends Unit {
         newChildrenUnitMap[newKey] = oldUnit;
       } else {
         // 不能复用，则重新利用虚拟 dom 创建 unit
-        console.log("[p3.32]", { newElement });
         let nextUnit = createReactUnit(newElement);
         newChildrenUnits.push(nextUnit);
         newChildrenUnitMap[newKey] = nextUnit;
@@ -391,7 +346,6 @@ class ReactNativeUnit extends Unit {
       let key = element.props?.key || i.toString();
       map[key] = unit;
     }
-    // console.log('[p1.30]',{map})
     return map;
   }
 
@@ -403,7 +357,6 @@ class ReactNativeUnit extends Unit {
     oldProps: Record<string, any>,
     newProps: Record<string, any>
   ) {
-    // console.log('[p1.1]', { oldProps, newProps })
     let propName: string;
     for (propName in oldProps) {
       if (!newProps.hasOwnProperty(propName)) {
@@ -497,7 +450,6 @@ export class ReactCompositUnit extends Unit {
     let nextRenderElement = this.componentInstance.render();
 
     if (shouldDeepCompare(preRenderElement, nextRenderElement)) {
-      console.log("[p1.01] shouldDeepCompare");
       // 如果可以进行深比较，则把更新的工作交给更新前的 unit
       preRenderUnitInstance.update(nextRenderElement);
       this.componentInstance.componentDidUpdate &&
@@ -524,10 +476,7 @@ export class ReactCompositUnit extends Unit {
     // 拿到的是 jsx，Element
     const jsx: Element = componentInstance.render();
 
-    console.log("[p1.0]", { jsx });
     let renderUnit: Unit = (this._renderUnit = createReactUnit(jsx));
-
-    // console.log("[p1.4]", { renderUnit, rootId });
 
     // unit 转换后的 html 字符串
     let markup = renderUnit.getMarkUp(this._rootId);
@@ -538,7 +487,6 @@ export class ReactCompositUnit extends Unit {
         componentInstance.componentDidMount();
     });
 
-    // console.log("[p1.2]", { markup });
     return markup;
   }
 }
@@ -546,7 +494,6 @@ export class ReactCompositUnit extends Unit {
 // element 转 Unit
 // 这里的 type 指的是 div span 等标签
 export default function createReactUnit(element: Element): Unit {
-  // console.log("[p1.3]", { element, type: element.type });
   // 数字和字符串，比如 10
   if (COMMON_TYPE.has(typeof element)) {
     return new ReactTextUnit(element);

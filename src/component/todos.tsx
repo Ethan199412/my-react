@@ -11,7 +11,6 @@ export default class Todos extends React.Component {
   }
 
   componentDidMount() {
-    // console.log('[p1.2] componentDidMount')
   }
 
   onChange = (e) => {
@@ -23,11 +22,7 @@ export default class Todos extends React.Component {
 
   handleAdd = () => {
     const { text } = this.state;
-    // console.log('[p1.2] text', text)
-    // if (!text) {
-    //   alert("please input something");
-    //   return;
-    // }
+
     this.setState({
       list: [...this.state.list, text],
       text: "",
@@ -55,7 +50,6 @@ export default class Todos extends React.Component {
   };
   // remember, div in jsx means React.createElement('div', null, children)
   render() {
-    // console.log('[p1.1] render')
     return (
       <div className='container'>
         <Header title="To do list" />
