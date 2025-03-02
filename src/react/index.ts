@@ -1,6 +1,7 @@
-import createReactUnit, { ReactCompositUnit, Unit } from "./unit.ts";
 import createElement, { Element } from "./element.ts";
 import Component from "./component.ts";
+import { Unit } from "./units/unit.ts";
+import { createReactUnit } from "./units/utils.ts";
 
 interface IReact {
   render: (element: any, container: HTMLElement) => void;
