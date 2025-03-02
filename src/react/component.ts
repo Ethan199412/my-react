@@ -18,6 +18,6 @@ export default class Component<IProps, IState extends Record<string, any>> {
 
   setState(partialState) {
     // update 方法你可以理解为更新真实 dom
-    this._currentUnit.update(null, partialState);
+    this._currentUnit!.update(null, partialState);
   }
 }
