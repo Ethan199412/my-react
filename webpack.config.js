@@ -1,3 +1,4 @@
+const { stat } = require("fs");
 const path = require("path");
 const webpack = require("webpack");
 
@@ -62,6 +63,7 @@ const getConfig = (env) => {
       publicPath: "/dist/",
       filename: "bundle.js",
     },
+    stats: 'errors-only',
     devServer: {
       contentBase: path.join(__dirname, "public/"),
       port: 3000,
