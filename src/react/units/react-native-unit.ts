@@ -158,7 +158,7 @@ export class ReactNativeUnit extends Unit {
 
     // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
-    const thisLayerDiff = [];
+    const thisLayerDiff: { toIndex: number; unit: Unit }[] = [];
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
       newUnit._currentElement = newUnit._currentElement as Element;
@@ -242,8 +242,9 @@ export class ReactNativeUnit extends Unit {
         // 解除事件委托
         $(document).undelegate(`.${oldChildUnit._rootId}`);
       }
-    }
-
+      }
+    
+    // 使用 thisLayerDiff 更新 _renderedChildrenUnits
     for (let i = 0; i < thisLayerDiff.length; i++) {
       const { unit, toIndex } = thisLayerDiff[i];
       this._renderedChildrenUnits.splice(toIndex, 0, unit);
