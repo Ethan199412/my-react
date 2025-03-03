@@ -10,6 +10,7 @@ interface IDiff {
   type: string; // 新增的元素的 html 字符串
 }
 
+// 这个 diff 算法其实挺难理解 lastIndex 的。难点在于，如果一个元素在原来的位置之前，那么它的 index 会变化，所以需要一个 lastIndex 来记录最大的 index
 const oldArr = [
   {
     key: "1",
@@ -24,15 +25,19 @@ const oldArr = [
     value: 3,
   },
   {
-    key: '5',
-    value: 5
-  }
+    key: "4",
+    value: 4,
+  },
+  {
+    key: "5",
+    value: 5,
+  },
 ];
 
 const newArr = [
   {
-    key: "2",
-    value: 2,
+    key: "5",
+    value: 5,
   },
   {
     key: "1",
@@ -41,6 +46,10 @@ const newArr = [
   {
     key: "3",
     value: 3,
+  },
+  {
+    key: "2",
+    value: 2,
   },
   {
     key: "4",
@@ -76,19 +85,17 @@ const diff = (oldArr: IElement[], newArr: IElement[]) => {
     }
     // 如果找到，判断是否需要移动
     else {
-      if (oldIndex !== newIndex) {
-        if (oldIndex < lastIndex) {
-          diffs.push({
-            node: newItem,
-            fromIndex: oldIndex,
-            toIndex: newIndex,
-            type: "move",
-          });
-          // 先删除
-          tempArr = tempArr.filter((e) => e.key !== newItem.key);
-        }
-        lastIndex = Math.max(lastIndex, oldIndex);
+      if (oldIndex < lastIndex) {
+        diffs.push({
+          node: newItem,
+          fromIndex: oldIndex,
+          toIndex: newIndex,
+          type: "move",
+        });
+        // 先删除
+        tempArr = tempArr.filter((e) => e.key !== newItem.key);
       }
+      lastIndex = Math.max(lastIndex, oldIndex);
     }
   });
 
@@ -120,4 +127,6 @@ const patch = (diffs: IDiff[], tempArr: IElement[]) => {
 };
 
 const { tempArr, diffs } = diff(oldArr, newArr);
+console.log("[p1.0]", { tempArr, diffs });
 const result = patch(diffs, tempArr);
+console.log("[p1.1]", result);

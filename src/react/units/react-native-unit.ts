@@ -94,6 +94,7 @@ export class ReactNativeUnit extends Unit {
     let deleteChildren: $<HTMLElement>[] = [];
     let deleteMap: Record<number, $<HTMLElement>> = {};
 
+    // 先删除后添加
     for (let i = 0; i < diffQueue.length; i++) {
       let difference: IDiff = diffQueue[i];
       if (
