@@ -1,4 +1,3 @@
-import $ from "jquery";
 import { Element } from "../element.ts";
 import { COMMON_TYPE } from "./types.ts";
 import { ReactTextUnit } from "./react-text-unit.ts";

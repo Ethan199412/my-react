@@ -4,7 +4,7 @@ export class TestDiff extends React.Component<any> {
   constructor(props) {
     super(props);
     this.state = {
-      list: [1,2,3,4,5],
+      list: [1, 2, 3, 4, 5],
     };
   }
 
@@ -26,7 +26,7 @@ export class TestDiff extends React.Component<any> {
 
   handleUpdate = () => {
     this.setState({
-      list: [3, 1, 5, 2, 4],
+      list: [5, 1, 3, 2, 4],
     });
   };
 
@@ -34,19 +34,17 @@ export class TestDiff extends React.Component<any> {
     const { list } = this.state;
     return (
       <div>
-        <div>
-          {list.map((e, index) => (
-            <div key={"key-" + e} onClick={() => this.handleDel(index)}>
-              {e}
-            </div>
-          ))}
-          <button key={"btn-add"} onClick={this.handleAdd}>
-            add
-          </button>
-          <button key={"btn-update"} onClick={this.handleUpdate}>
-            update
-          </button>
-        </div>
+        {list.map((e, index) => (
+          <div key={"key-" + e} onClick={() => this.handleDel(index)}>
+            {e}
+          </div>
+        ))}
+        <button key={"btn-add"} onClick={this.handleAdd}>
+          add
+        </button>
+        <button key={"btn-update"} onClick={this.handleUpdate}>
+          update
+        </button>
       </div>
     );
   }

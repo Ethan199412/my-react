@@ -1,7 +1,7 @@
 import { Element } from "./element";
 import { ReactCompositUnit } from "./units/react-composit-unit";
 
-export default class Component<IProps, IState extends Record<string, any>> {
+export default class Component<IProps extends Record<string, any>, IState extends Record<string, any>> {
   props?: IProps;
   state?: IState;
   _currentUnit?: ReactCompositUnit;

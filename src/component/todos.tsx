@@ -1,7 +1,9 @@
 import React from "../react/index.ts";
 import Header from "./header.tsx";
 
-export default class Todos extends React.Component {
+const { Component } = React;
+
+export default class Todos extends Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -10,8 +12,7 @@ export default class Todos extends React.Component {
     };
   }
 
-  componentDidMount() {
-  }
+  componentDidMount() {}
 
   onChange = (e) => {
     console.log("e", e);
@@ -30,18 +31,17 @@ export default class Todos extends React.Component {
   };
 
   onDel = (index) => {
+    const { list } = this.state;
+    list.splice(index, 1);
     this.setState({
-      list: [
-        ...this.state.list.slice(0, index),
-        ...this.state.list.slice(index + 1),
-      ],
+      list: [...list],
     });
   };
 
   renderList = (list) => {
     return list.map((e, index) => {
       return (
-        <div>
+        <div key={"key" + e}>
           <span>{e}</span>
           <button onClick={() => this.onDel(index)}>删除</button>
         </div>
@@ -51,7 +51,7 @@ export default class Todos extends React.Component {
   // remember, div in jsx means React.createElement('div', null, children)
   render() {
     return (
-      <div className='container'>
+      <div className="container">
         <Header title="To do list" />
         <input value={this.state.text} onChange={this.onChange} />
         <button onClick={this.handleAdd}>添加</button>
