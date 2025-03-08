@@ -1,5 +1,6 @@
 import React from "../react/index.ts";
 import Header from "./header.tsx";
+import './todos.less'
 
 const { Component } = React;
 
@@ -15,17 +16,16 @@ export default class Todos extends Component {
   componentDidMount() {}
 
   onChange = (e) => {
-    console.log("e", e);
     this.setState({
       text: e.target.value,
     });
   };
 
   handleAdd = () => {
-    const { text } = this.state;
+    const { text, list } = this.state;
 
     this.setState({
-      list: [...this.state.list, text],
+      list: [...list, text],
       text: "",
     });
   };
@@ -41,9 +41,9 @@ export default class Todos extends Component {
   renderList = (list) => {
     return list.map((e, index) => {
       return (
-        <div key={"key" + e}>
-          <span>{e}</span>
-          <button onClick={() => this.onDel(index)}>删除</button>
+        <div className='item' key={"key" + e}>
+          <span className='text'>{e}</span>
+          <div className='button' onClick={() => this.onDel(index)}>删除</div>
         </div>
       );
     });
@@ -53,8 +53,10 @@ export default class Todos extends Component {
     return (
       <div className="container">
         <Header title="To do list" />
-        <input value={this.state.text} onChange={this.onChange} />
-        <button onClick={this.handleAdd}>添加</button>
+        <div className='input-container'>
+          <input className='input' value={this.state.text} onChange={this.onChange} />
+          <div className='button' onClick={this.handleAdd}>添加</div>
+        </div>
         {this.renderList(this.state.list)}
       </div>
     );

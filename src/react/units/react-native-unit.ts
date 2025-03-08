@@ -51,6 +51,23 @@ export class ReactNativeUnit extends Unit {
           })
           .join("");
       }
+      else if (propName === "className") {
+        // console.log('[p1.1] propName', propName)
+        tagStart += `class="${props[propName]}"`;
+      }
+      else if(propName === 'key'){
+        continue;
+        // [DEBUG] 定位时，可以在这里添加 log
+        // console.log('[p1.2] propName', propName)
+      }
+      else if(propName === 'style'){
+        // console.log('[p1.3] propName', propName)
+        let styleObj = props[propName];
+        let styles = Object.entries(styleObj).map(([key, value]) => {
+          return `${key}:${value}`;
+        }).join(';');
+        tagStart += `style="${styles}"`;
+      }
       // 如果是其他属性
       else {
         tagStart += `${propName}=${props[propName]}`;
@@ -338,13 +355,13 @@ export class ReactNativeUnit extends Unit {
           .querySelector(`[data-reactid="${this._rootId}"]`)
           .setAttribute("class", newProps[propName]);
       } else if (propName == "style") {
-        //$(`[data-reactid="${}"]`)
-        // let styleObj = newProps[propName];
-        // for (let attr in styleObj) {
-        //   (document
-        //     .querySelector(`[data-reactid="${this._rootId}"]`) as any)
-        //     .style[attr] = styleObj[attr];
-        // }
+        // $(`[data-reactid="${}"]`)
+        let styleObj = newProps[propName];
+        for (let attr in styleObj) {
+          (document
+            .querySelector(`[data-reactid="${this._rootId}"]`) as any)
+            .style[attr] = styleObj[attr];
+        }
       } else {
         // 给真实 dom 添加属性
         $(`[data-reactid="${this._rootId}"]`).prop(
