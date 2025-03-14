@@ -42,6 +42,9 @@ npm run exp # 直接跑同层级 diff 算法的例子
 首先，patch 会被递归的收集起来，去统一地更新真实 dom，这一步可以直接阅读 react-native-unit.ts 里面 patch 方法。但是光有这一步是远远不够的。对于同层级节点的比较，patch 也需要及时更新当前 unit 的 _renderChildrenUnits 的节点。
 也就是说，patch 会往两个地方打。详见 diff() 这个函数。
 
+## 关于合成事件
+本例非常简单，并未实现 react 的合成事件，react 不负责管理事件。因此，react 无法在事件处理函数中收集所有的 setState 进行批处理。所以这个迷你 react 里面 setState 是同步的，而不是像真实的 react 那样是异步的。
+
 
 ## 三个关键概念
 react 中有三个非常关键的概念：Component, Element 和 Unit
