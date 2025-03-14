@@ -35,7 +35,7 @@ npm run exp # 直接跑同层级 diff 算法的例子
 |4 | 3| 4|3<4? T|{toIndex:4}|
 
 
-注意，lastIndex 会始终是已遍历节点的最大 old index。
+注意，lastIndex 会始终保持为已遍历节点的最大 old index。
 
 
 #### patch 会更新谁？
