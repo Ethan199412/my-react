@@ -4,47 +4,27 @@ export class TestDiff extends React.Component<any> {
   constructor(props) {
     super(props);
     this.state = {
-      list: [1, 2, 3, 4, 5],
+      show: true
     };
   }
 
-  handleDel = (index) => {
-    const { list } = this.state;
-    list.splice(index, 1);
+  handleClick=()=>{
     this.setState({
-      list: [...list],
-    });
-  };
-
-  handleAdd = () => {
-    const { list } = this.state;
-    list.push(Math.max(...list) + 1);
-    this.setState({
-      list: [...list],
-    });
-  };
-
-  handleUpdate = () => {
-    this.setState({
-      list: [5, 1, 3, 2, 4],
-    });
-  };
+      show: !this.state.show
+    })
+  }
 
   render() {
-    const { list } = this.state;
+    const { show } = this.state;
     return (
       <div>
-        {list.map((e, index) => (
-          <div key={"key-" + e} onClick={() => this.handleDel(index)}>
-            {e}
-          </div>
-        ))}
-        <button key={"btn-add"} onClick={this.handleAdd}>
-          add
-        </button>
-        <button key={"btn-update"} onClick={this.handleUpdate}>
-          update
-        </button>
+        {show && <div key={'haha'}>
+            <div>haha</div>
+            <div>haha</div>
+            <div>haha</div>
+            <div>haha</div>
+          </div>}
+        <button key={'button'} onClick={this.handleClick}>show</button>
       </div>
     );
   }

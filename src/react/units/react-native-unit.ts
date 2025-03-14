@@ -50,22 +50,21 @@ export class ReactNativeUnit extends Unit {
             );
           })
           .join("");
-      }
-      else if (propName === "className") {
+      } else if (propName === "className") {
         // console.log('[p1.1] propName', propName)
         tagStart += `class="${props[propName]}"`;
-      }
-      else if(propName === 'key'){
+      } else if (propName === "key") {
         continue;
         // [DEBUG] 定位时，可以在这里添加 log
         // console.log('[p1.2] propName', propName)
-      }
-      else if(propName === 'style'){
+      } else if (propName === "style") {
         // console.log('[p1.3] propName', propName)
         let styleObj = props[propName];
-        let styles = Object.entries(styleObj).map(([key, value]) => {
-          return `${key}:${value}`;
-        }).join(';');
+        let styles = Object.entries(styleObj)
+          .map(([key, value]) => {
+            return `${key}:${value}`;
+          })
+          .join(";");
         tagStart += `style="${styles}"`;
       }
       // 如果是其他属性
@@ -177,6 +176,7 @@ export class ReactNativeUnit extends Unit {
     // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
     const thisLayerDiff: { toIndex: number; unit: Unit }[] = [];
+    console.log("[p1.0]", { newChildrenUnits });
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
       newUnit._currentElement = newUnit._currentElement as Element;
@@ -260,8 +260,8 @@ export class ReactNativeUnit extends Unit {
         // 解除事件委托
         $(document).undelegate(`.${oldChildUnit._rootId}`);
       }
-      }
-    
+    }
+
     // 使用 thisLayerDiff 更新 _renderedChildrenUnits
     for (let i = 0; i < thisLayerDiff.length; i++) {
       const { unit, toIndex } = thisLayerDiff[i];
@@ -294,7 +294,7 @@ export class ReactNativeUnit extends Unit {
     });
     return {
       newChildrenUnitMap,
-      newChildrenUnits,
+      newChildrenUnits: newChildrenUnits.filter((e) => e),
     };
   }
   getOldChildrenMap(childrenUnits: Unit[] = []) {
@@ -358,9 +358,9 @@ export class ReactNativeUnit extends Unit {
         // $(`[data-reactid="${}"]`)
         let styleObj = newProps[propName];
         for (let attr in styleObj) {
-          (document
-            .querySelector(`[data-reactid="${this._rootId}"]`) as any)
-            .style[attr] = styleObj[attr];
+          (
+            document.querySelector(`[data-reactid="${this._rootId}"]`) as any
+          ).style[attr] = styleObj[attr];
         }
       } else {
         // 给真实 dom 添加属性
