@@ -17,14 +17,26 @@ npm run exp # 直接跑同层级 diff 算法的例子
 第一次渲染的逻辑其实很简单，本质上就是 react 把根组件的 jsx 拿出来，转换成真实 dom，然后再往 html root 容器上放。当然，生成 html 字符串这块使用的是递归的方法。
 
 ### setState 情形1：同层级节点的比较
-![](/assets/diff.png "删除 dom")
+![](/assets/diff.png "diff")
 
-这个是 react diff 算法的重点和难点，推荐参考知乎上的这篇文章：https://zhuanlan.zhihu.com/p/26791320422
+这个是 react diff 算法的重点和难点，如果还不熟悉，可以先跑 npm run experiment，这个是简化版的同层级 diff 算法。
 
 这个算法搞懂的关键在于理解 lastIndex。lastIndex 用一句话解释就是，我要通过这个值，把老队列里面的那些相对有序的子序列尽可能保留下来，然后把那些乱序的值干掉。举个例子 
 ```[1,2,3,4,5]->[3,1,5,2,4] ```
 
 根据 lastIndex 算法老队列里面的 3 和 5 会被保留下来，而 1,2,4 会被干掉，所以第一步生成的临时队列是 [3,5] 接着 1,2,4 会根据新队列的顺序生成 patch 往 [3,5] 里面加。
+
+| new value| old index | last index | update? |diff |
+| --- | --- | --- | --- |---|
+|3 | 2| 0|2<0? F lastIndex=2 |-|
+|5 | 4| 2|4<2? F lastIndex=4|-|
+|1 | 0| 4|0<4? T|{toIndex:2, node:1}|
+|2 | 1|4 |1<4? T|{toIndex:3,node:2}|
+|4 | 3| 4|3<4? T|{toIndex:4}|
+
+
+注意，lastIndex 会始终是已遍历节点的最大 old index。
+
 
 #### patch 会更新谁？
 首先，patch 会被递归的收集起来，去统一地更新真实 dom，这一步可以直接阅读 react-native-unit.ts 里面 patch 方法。但是光有这一步是远远不够的。对于同层级节点的比较，patch 也需要及时更新当前 unit 的 _renderChildrenUnits 的节点。
