@@ -1,14 +1,21 @@
 import React from "../react/index.ts";
 import Header from "./header.tsx";
-import './todos.less'
+import "./todos.less";
 
 const { Component } = React;
+
+export const generateUuid = () => {
+  return Math.random().toString(36).slice(10);
+};
 
 export default class Todos extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      list: ["to learn js", "to learn react"],
+      list: [
+        { text: "to learn js", key: generateUuid() },
+        { text: "to learn react", key: generateUuid() },
+      ],
       text: "",
     };
   }
@@ -23,12 +30,12 @@ export default class Todos extends Component {
 
   handleAdd = () => {
     const { text, list } = this.state;
-    setTimeout(()=>{
+    setTimeout(() => {
       this.setState({
-        list: [...list, text],
+        list: [...list, { text, key: generateUuid() }],
         text: "",
       });
-    })
+    });
   };
 
   onDel = (index) => {
@@ -41,10 +48,13 @@ export default class Todos extends Component {
 
   renderList = (list) => {
     return list.map((e, index) => {
+      const { text, key } = e;
       return (
-        <div className='item' key={"key" + e}>
-          <span className='text'>{e}</span>
-          <div className='button' onClick={() => this.onDel(index)}>删除</div>
+        <div className="item" key={key}>
+          <span className="text">{text}</span>
+          <div className="button" onClick={() => this.onDel(index)}>
+            删除
+          </div>
         </div>
       );
     });
@@ -54,9 +64,15 @@ export default class Todos extends Component {
     return (
       <div className="container">
         <Header title="To do list" />
-        <div className='input-container'>
-          <input className='input' value={this.state.text} onChange={this.onChange} />
-          <div className='button' onClick={this.handleAdd}>添加</div>
+        <div className="input-container">
+          <input
+            className="input"
+            value={this.state.text}
+            onChange={this.onChange}
+          />
+          <div className="button" onClick={this.handleAdd}>
+            添加
+          </div>
         </div>
         {this.renderList(this.state.list)}
       </div>

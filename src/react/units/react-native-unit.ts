@@ -199,6 +199,8 @@ export class ReactNativeUnit extends Unit {
     // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
     const thisLayerDiff: { toIndex: number; unit: Unit }[] = [];
+    const needDeleteNodeIds = new Set<string>();
+
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
       newUnit._currentElement = newUnit._currentElement as Element;
@@ -223,10 +225,7 @@ export class ReactNativeUnit extends Unit {
             unit: oldChildUnit,
           });
           // units 也需要删除 remove 和 move 类型的
-          // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
-          this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
-            (e) => e !== oldChildUnit
-          );
+          needDeleteNodeIds.add(oldChildUnit._nodeId);
         }
         lastIndex = Math.max(lastIndex, oldChildUnit._mountIndex);
       } else {
@@ -240,10 +239,7 @@ export class ReactNativeUnit extends Unit {
             type: NodeAction.Remove,
             fromIndex: oldChildUnit._mountIndex,
           });
-          // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
-          this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
-            (e) => e !== oldChildUnit
-          );
+          needDeleteNodeIds.add(oldChildUnit._nodeId);
           // 取消 .${oldChildUnit._nodeId} 的所有事件委托
           $(document).undelegate(`.${oldChildUnit._nodeId}`);
         }
@@ -275,14 +271,17 @@ export class ReactNativeUnit extends Unit {
           type: NodeAction.Remove,
           fromIndex: oldChildUnit._mountIndex,
         });
-        this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
-          (e) => e !== oldChildUnit
-        );
+        needDeleteNodeIds.add(oldChildUnit._nodeId);
         // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
         // 解除事件委托
         $(document).undelegate(`.${oldChildUnit._nodeId}`);
       }
     }
+
+    // 重新赋值 _renderedChildrenUnits
+    this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
+      (unit) => !needDeleteNodeIds.has(unit._nodeId)
+    );
 
     // 使用 thisLayerDiff 更新 _renderedChildrenUnits
     for (let i = 0; i < thisLayerDiff.length; i++) {

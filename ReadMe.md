@@ -43,7 +43,7 @@ npm run exp # 直接跑同层级 diff 算法的例子
 也就是说，patch 会往两个地方打。详见 diff() 这个函数。
 
 ## 关于 setState 的批处理
-
+属于事件处理函数的同步代码段中的 setState 一定不会立刻更新真实 dom，因为这有损性能。所以 react 的策略是把同步代码段的所有 setState 中要更新的 partialState 先收集起来，当事件处理函数彻底执行完毕后，把这些收集起来的 partialState 合并，统一更新真实 dom。
 
 ## 三个关键概念
 react 中有三个非常关键的概念：Component, Element 和 Unit
@@ -60,4 +60,5 @@ Element 本身不就是一个虚拟 dom 了么。这是一个很好的问题，�
 缺陷二：除了信息量不够不便于 react 管理之外，它的第二个缺点是很多 react 节点的管理方式是有区别的。一个组件的管理和一个普通 div 标签的管理是有区别的。只用 Element 做不到这一点。
 
 ## 参考
+【cnblog】https://www.cnblogs.com/qiqi715/p/13900916.html
 【知乎】https://zhuanlan.zhihu.com/p/26791320422
