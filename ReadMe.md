@@ -60,5 +60,5 @@ Element 本身不就是一个虚拟 dom 了么。这是一个很好的问题，�
 缺陷二：除了信息量不够不便于 react 管理之外，它的第二个缺点是很多 react 节点的管理方式是有区别的。一个组件的管理和一个普通 div 标签的管理是有区别的。只用 Element 做不到这一点。
 
 ## 参考
-【cnblog】https://www.cnblogs.com/qiqi715/p/13900916.html
+【cnblog】https://www.cnblogs.com/qiqi715/p/13900916.html  
 【知乎】https://zhuanlan.zhihu.com/p/26791320422
