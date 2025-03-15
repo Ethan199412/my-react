@@ -8,14 +8,14 @@ import { Unit } from "./unit.ts";
 
 // element 转 Unit
 // 这里的 type 指的是 div span 等标签
-export function createReactUnit(element: Element): Unit {
+export function createReactUnit(element: Element, fatherCompositUnit?: ReactCompositUnit): Unit {
   // 数字和字符串，比如 10
   if (COMMON_TYPE.has(typeof element)) {
     return new ReactTextUnit(element);
   }
   // react 元素，比如 <div>10</div> 或者 <div><div>1</div></div>
   if (typeof element === "object" && typeof element.type === "string") {
-    return new ReactNativeUnit(element);
+    return new ReactNativeUnit(element, fatherCompositUnit);
   }
 
   // react 组件，比如 <Counter/>

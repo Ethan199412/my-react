@@ -127,6 +127,6 @@ const patch = (diffs: IDiff[], tempArr: IElement[]) => {
 };
 
 const { tempArr, diffs } = diff(oldArr, newArr);
-console.log("[p1.0]", { tempArr, diffs });
+console.log("[DIFF]", { tempArr, diffs });
 const result = patch(diffs, tempArr);
-console.log("[p1.1]", result);
+console.log("[RESULT]", result);

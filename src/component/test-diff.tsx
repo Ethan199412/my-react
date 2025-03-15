@@ -4,27 +4,31 @@ export class TestDiff extends React.Component<any> {
   constructor(props) {
     super(props);
     this.state = {
-      show: true
+      number: 0,
+      number2: 2,
     };
   }
 
-  handleClick=()=>{
+  handleClick = () => {
     this.setState({
-      show: !this.state.show
-    })
-  }
+      number: this.state.number + 1,
+    });
+
+    this.setState({
+      number2: this.state.number2 + 1,
+    });
+    console.log('[p2.0]', this.state)
+  };
 
   render() {
-    const { show } = this.state;
+    const { number, number2 } = this.state;
     return (
       <div>
-        {show && <div key={'haha'}>
-            <div>haha</div>
-            <div>haha</div>
-            <div>haha</div>
-            <div>haha</div>
-          </div>}
-        <button key={'button'} onClick={this.handleClick}>show</button>
+        <div>{number}</div>
+        <div>{number2}</div>
+        <button key={"button"} onClick={this.handleClick}>
+          show
+        </button>
       </div>
     );
   }

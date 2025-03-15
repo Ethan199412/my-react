@@ -1,7 +1,10 @@
 import { Element } from "./element";
 import { ReactCompositUnit } from "./units/react-composit-unit";
 
-export default class Component<IProps extends Record<string, any>, IState extends Record<string, any>> {
+export default class Component<
+  IProps extends Record<string, any>,
+  IState extends Record<string, any>
+> {
   props?: IProps;
   state?: IState;
   _currentUnit?: ReactCompositUnit;
@@ -18,6 +21,10 @@ export default class Component<IProps extends Record<string, any>, IState extend
 
   setState(partialState) {
     // update 方法你可以理解为更新真实 dom
-    this._currentUnit!.update(null, partialState);
+    // this._currentUnit!.update(null, partialState);
+    if (this._currentUnit._isBatchingUpdate) {
+      return this._currentUnit.batchUpdate(partialState);
+    }
+    this._currentUnit.update(null, partialState);
   }
 }

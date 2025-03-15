@@ -7,17 +7,40 @@ import { IDiff } from "./types.ts";
 import $ from "jquery";
 import { NodeAction } from "../types.ts";
 import { Unit } from "./unit.ts";
+import { ReactCompositUnit } from "./react-composit-unit.ts";
 
 // 生成元素类型的 Unit
 export class ReactNativeUnit extends Unit {
   _renderedChildrenUnits: Unit[];
+  _fatherCompositUnit: ReactCompositUnit;
+
+  constructor(element: Element, fatherCompositUnit: ReactCompositUnit) {
+    super(element);
+    this._fatherCompositUnit = fatherCompositUnit;
+  }
+
+  // 高阶函数，用于合并一个事件处理函数的多个 setState
+  hoCallback(callback: (...args: any) => any) {
+    return (...args: any) => {
+      // 激活批量更新
+      this._fatherCompositUnit._isBatchingUpdate = true
+      callback(...args);
+      const state = this._fatherCompositUnit.composeState()
+      // flush
+      this._fatherCompositUnit.update(null, state);
+
+      // 关闭批量更新，因此异步代码段的 setState 会立即更新
+      this._fatherCompositUnit._isBatchingUpdate = false
+      this._fatherCompositUnit.cleanStateQueue()
+    };
+  }
 
   // 拼接真实 dom 的字符串
-  getMarkUp(rootId: string): string {
-    this._rootId = rootId;
-    let { type, props } = this._currentElement as Element;
-    let tagStart: string = `<${type} data-reactid="${this._rootId}"`;
-    let tagEnd: string = `</${type}>`;
+  getMarkUp(nodeId: string): string {
+    this._nodeId = nodeId;
+    const { type, props } = this._currentElement as Element;
+    let tagStart: string = `<${type} data-reactid="${this._nodeId}"`;
+    const tagEnd: string = `</${type}>`;
 
     this._renderedChildrenUnits = [];
     let contentStr;
@@ -25,13 +48,13 @@ export class ReactNativeUnit extends Unit {
       // 如果是事件
       if (/on[A-Z]/.test(propName)) {
         let eventType = propName.slice(2).toLowerCase(); // string click
-
+        const callback = props[propName];
         // 使用事件委托，降低内促占用
         // 通过委托顶级dom，给满足特定条件的子元素绑定事件，其中 props[propname] 为事件处理函数
         $(document).delegate(
-          `[data-reactid="${this._rootId}"]`,
-          `${eventType}.${this._rootId}`,
-          props[propName]
+          `[data-reactid="${this._nodeId}"]`,
+          `${eventType}.${this._nodeId}`,
+          this.hoCallback(callback)
         );
       }
       // 如果是子元素
@@ -39,26 +62,26 @@ export class ReactNativeUnit extends Unit {
         // ['<span>你好</span>','<button>123</button>']
         contentStr = (props["children"] as Element[])
           .map((child, idx) => {
-            let childUnitInstance: Unit = createReactUnit(child);
+            let childUnitInstance: Unit = createReactUnit(
+              child,
+              this._fatherCompositUnit
+            );
 
             // _mountIndex 属性，指向自己在父节点的位置。
             childUnitInstance._mountIndex = idx;
             this._renderedChildrenUnits.push(childUnitInstance);
 
             return childUnitInstance.getMarkUp(
-              `${this._rootId}-${generateUuid()}`
+              `${this._nodeId}-${generateUuid()}`
             );
           })
           .join("");
       } else if (propName === "className") {
-        // console.log('[p1.1] propName', propName)
         tagStart += `class="${props[propName]}"`;
       } else if (propName === "key") {
         continue;
         // [DEBUG] 定位时，可以在这里添加 log
-        // console.log('[p1.2] propName', propName)
       } else if (propName === "style") {
-        // console.log('[p1.3] propName', propName)
         let styleObj = props[propName];
         let styles = Object.entries(styleObj)
           .map(([key, value]) => {
@@ -176,7 +199,6 @@ export class ReactNativeUnit extends Unit {
     // 这里 lastIndex 的含义是在父节点中的位置
     let lastIndex = 0;
     const thisLayerDiff: { toIndex: number; unit: Unit }[] = [];
-    console.log("[p1.0]", { newChildrenUnits });
     for (let i = 0; i < newChildrenUnits.length; i++) {
       let newUnit = newChildrenUnits[i];
       newUnit._currentElement = newUnit._currentElement as Element;
@@ -190,8 +212,8 @@ export class ReactNativeUnit extends Unit {
         // _mountIndex 的意思是在父节点中的位置
         if (oldChildUnit._mountIndex < lastIndex) {
           diffQueue.push({
-            parentId: this._rootId, // 节点自己的 reactid
-            parentNode: $(`[data-reactid="${this._rootId}"]`),
+            parentId: this._nodeId, // 节点自己的 reactid
+            parentNode: $(`[data-reactid="${this._nodeId}"]`),
             type: NodeAction.Move,
             fromIndex: oldChildUnit._mountIndex,
             toIndex: i,
@@ -213,8 +235,8 @@ export class ReactNativeUnit extends Unit {
         // 如果是新增，则老的 oldChildUnit 是不存在的
         if (oldChildUnit) {
           diffQueue.push({
-            parentId: this._rootId,
-            parentNode: $(`[data-reactid="${this._rootId}"]`),
+            parentId: this._nodeId,
+            parentNode: $(`[data-reactid="${this._nodeId}"]`),
             type: NodeAction.Remove,
             fromIndex: oldChildUnit._mountIndex,
           });
@@ -222,15 +244,15 @@ export class ReactNativeUnit extends Unit {
           this._renderedChildrenUnits = this._renderedChildrenUnits.filter(
             (e) => e !== oldChildUnit
           );
-          // 取消 .${oldChildUnit._rootId} 的所有事件委托
-          $(document).undelegate(`.${oldChildUnit._rootId}`);
+          // 取消 .${oldChildUnit._nodeId} 的所有事件委托
+          $(document).undelegate(`.${oldChildUnit._nodeId}`);
         }
         diffQueue.push({
-          parentId: this._rootId,
-          parentNode: $(`[data-reactid="${this._rootId}"]`),
+          parentId: this._nodeId,
+          parentNode: $(`[data-reactid="${this._nodeId}"]`),
           type: NodeAction.Insert,
           toIndex: i,
-          markup: newUnit.getMarkUp(`${this._rootId}-${generateUuid()}`),
+          markup: newUnit.getMarkUp(`${this._nodeId}-${generateUuid()}`),
         });
 
         thisLayerDiff.push({
@@ -248,8 +270,8 @@ export class ReactNativeUnit extends Unit {
       // 如果老的有，新的没有，那么删除
       if (!newChildrenUnitMap.hasOwnProperty(oldKey)) {
         diffQueue.push({
-          parentId: this._rootId,
-          parentNode: $(`[data-reactid="${this._rootId}"]`),
+          parentId: this._nodeId,
+          parentNode: $(`[data-reactid="${this._nodeId}"]`),
           type: NodeAction.Remove,
           fromIndex: oldChildUnit._mountIndex,
         });
@@ -258,7 +280,7 @@ export class ReactNativeUnit extends Unit {
         );
         // this._renderedChildrenUnits.splice(oldChildUnit._mountIndex, 1);
         // 解除事件委托
-        $(document).undelegate(`.${oldChildUnit._rootId}`);
+        $(document).undelegate(`.${oldChildUnit._nodeId}`);
       }
     }
 
@@ -286,7 +308,7 @@ export class ReactNativeUnit extends Unit {
         newChildrenUnitMap[newKey] = oldUnit;
       } else {
         // 不能复用，则重新利用虚拟 dom 创建 unit
-        let nextUnit = createReactUnit(newElement);
+        let nextUnit = createReactUnit(newElement, this._fatherCompositUnit);
         newChildrenUnits.push(nextUnit);
         newChildrenUnitMap[newKey] = nextUnit;
         // this._renderedChildrenUnits[index] = nextUnit;
@@ -321,17 +343,14 @@ export class ReactNativeUnit extends Unit {
       if (!newProps.hasOwnProperty(propName)) {
         // 更新真实 dom，删除属性
         document
-          .querySelector(`[data-reactid="${this._rootId}"]`)
+          .querySelector(`[data-reactid="${this._nodeId}"]`)
           .removeAttribute(propName);
 
         // 如果老的属性有，担新的属性没有，且该属性是事件，需要解绑事件
         // 在这里加是不对的，想想为什么？因为后面还会再次绑定事件
-        // if (/^on[A-Z]/.test(propName)) {
-        //   $(document).undelegate(`.${this._rootId}`);
-        // }
       }
       if (/^on[A-Z]/.test(propName)) {
-        $(document).undelegate(`.${this._rootId}`);
+        $(document).undelegate(`.${this._nodeId}`);
       }
     }
 
@@ -344,27 +363,29 @@ export class ReactNativeUnit extends Unit {
       else if (/^on[A-Z]/.test(propName)) {
         let eventName = propName.slice(2).toLowerCase();
 
+        const callback = newProps[propName];
+
         // 如果新属性有事件，增添加事件委托，看起来无论如何都再新增一次事件
         $(document).delegate(
-          `[data-reactid="${this._rootId}"]`,
-          `${eventName}.${this._rootId}`,
-          newProps[propName]
+          `[data-reactid="${this._nodeId}"]`,
+          `${eventName}.${this._nodeId}`,
+          this.hoCallback(callback)
         );
       } else if (propName == "className") {
         document
-          .querySelector(`[data-reactid="${this._rootId}"]`)
+          .querySelector(`[data-reactid="${this._nodeId}"]`)
           .setAttribute("class", newProps[propName]);
       } else if (propName == "style") {
         // $(`[data-reactid="${}"]`)
         let styleObj = newProps[propName];
         for (let attr in styleObj) {
           (
-            document.querySelector(`[data-reactid="${this._rootId}"]`) as any
+            document.querySelector(`[data-reactid="${this._nodeId}"]`) as any
           ).style[attr] = styleObj[attr];
         }
       } else {
         // 给真实 dom 添加属性
-        $(`[data-reactid="${this._rootId}"]`).prop(
+        $(`[data-reactid="${this._nodeId}"]`).prop(
           propName,
           newProps[propName]
         );

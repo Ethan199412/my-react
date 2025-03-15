@@ -5,9 +5,9 @@ export class ReactTextUnit extends Unit {
   constructor(element) {
     super(element);
   }
-  getMarkUp(rootId: string): string {
-    this._rootId = rootId;
-    let markUp = `<span data-reactid="${this._rootId}">${
+  getMarkUp(nodeId: string): string {
+    this._nodeId = nodeId;
+    let markUp = `<span data-reactid="${this._nodeId}">${
       this._currentElement as String | Number
     }</span>`;
     return markUp;
@@ -16,10 +16,10 @@ export class ReactTextUnit extends Unit {
   update(nextElement: string) {
     if (this._currentElement !== nextElement) {
       this._currentElement = nextElement;
-      //$(`[data-reactid="${this._rootId}"]`).html(nextElement);
+      //$(`[data-reactid="${this._nodeId}"]`).html(nextElement);
 
       // 此处更新真实 dom
-      document.querySelector(`[data-reactid="${this._rootId}"]`).innerHTML =
+      document.querySelector(`[data-reactid="${this._nodeId}"]`).innerHTML =
         nextElement;
     }
   }

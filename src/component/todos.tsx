@@ -23,11 +23,12 @@ export default class Todos extends Component {
 
   handleAdd = () => {
     const { text, list } = this.state;
-
-    this.setState({
-      list: [...list, text],
-      text: "",
-    });
+    setTimeout(()=>{
+      this.setState({
+        list: [...list, text],
+        text: "",
+      });
+    })
   };
 
   onDel = (index) => {

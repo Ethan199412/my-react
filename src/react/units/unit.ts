@@ -1,15 +1,15 @@
 import {Element} from '../element.ts';
 
 export abstract class Unit {
-    _rootId?: string; // 父元素的 id
+    _nodeId?: string; // 当前节点的 id
     _currentElement?: Element | string | number;
     _mountIndex?: number;
   
     constructor(element: Element | string | number) {
       this._currentElement = element;
-      this._rootId = undefined;
+      this._nodeId = undefined;
     }
-    abstract getMarkUp(rootId?: string): string;
+    abstract getMarkUp(nodeId?: string): string;
     abstract update(
       nextElement: Element | string | number,
       partialState?: any
